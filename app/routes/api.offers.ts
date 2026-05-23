@@ -1,6 +1,7 @@
 import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import prisma from "../db.server";
+import { unauthenticated } from "../shopify.server";
 
 function corsResponse(data: any, status = 200) {
   return json(data, {
@@ -37,7 +38,49 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return corsResponse({ offer: null });
   }
 
-  return corsResponse({ offer: store.offers[0] });
+  const rawOffer = store.offers[0];
+
+  try {
+    const { admin } = await unauthenticated.admin(shop);
+    const response = await admin.graphql(
+      `query getProductData($id: ID!) {
+        product(id: $id) {
+          title
+          featuredImage {
+            url
+          }
+          variants(first: 1) {
+            edges {
+              node {
+                id
+                price
+              }
+            }
+          }
+        }
+      }`,
+      { variables: { id: rawOffer.upsellProductId } }
+    );
+    const data = await response.json();
+    const product = data.data?.product;
+    
+    if (product) {
+      const variant = product.variants.edges[0]?.node;
+      
+      const enrichedOffer = {
+        ...rawOffer,
+        productTitle: product.title,
+        productImage: product.featuredImage?.url || null,
+        variantId: variant?.id,
+        originalPrice: variant?.price
+      };
+      return corsResponse({ offer: enrichedOffer });
+    }
+  } catch (error) {
+    console.error("Error enriching offer:", error);
+  }
+
+  return corsResponse({ offer: rawOffer });
 };
 
 // Handle preflight requests

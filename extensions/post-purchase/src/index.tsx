@@ -25,7 +25,7 @@ extend("Checkout::PostPurchase::ShouldRender", async ({ inputData, storage }) =>
     
     const data = await response.json();
     
-    if (data.offer) {
+    if (data.offer && data.offer.variantId) {
       await storage.update({ offer: data.offer });
       return { render: true };
     }
@@ -45,6 +45,7 @@ export function App({ extensionPoint, storage }) {
   
   const [isAccepting, setIsAccepting] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
+  const [errorText, setErrorText] = useState("");
 
   // Send an impression event when the component mounts
   React.useEffect(() => {
@@ -65,39 +66,68 @@ export function App({ extensionPoint, storage }) {
     return null; // Should not happen since ShouldRender guards this
   }
 
-  // Calculate the discount visually (simplified for MVP)
-  // In a real app, we would query the Storefront API for the upsell product's actual price and image
-  const discountText = offer.discountType === "percentage" 
-    ? `${offer.discountValue}% OFF` 
-    : `$${offer.discountValue} OFF`;
+  const originalPrice = parseFloat(offer.originalPrice || "0");
+  let discountAmount = 0;
+  
+  if (offer.discountType === "percentage") {
+    discountAmount = (originalPrice * offer.discountValue) / 100;
+  } else {
+    discountAmount = offer.discountValue;
+  }
+  
+  const finalPrice = Math.max(0, originalPrice - discountAmount);
+  const formattedFinalPrice = `$${finalPrice.toFixed(2)}`;
+  const formattedOriginalPrice = `$${originalPrice.toFixed(2)}`;
 
   const handleAccept = async () => {
     setIsAccepting(true);
+    setErrorText("");
     
     try {
-      // 1. Send accept event to analytics
-      await fetch(`${APP_URL}/api/events`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          shop: shopDomain,
-          offerId: offer.id,
-          eventType: "accepted",
-          upsellRevenue: 0 // In real app, calculate actual revenue added
-        })
+      // 1. Calculate Changeset
+      const changes = await calculateChangeset({ 
+        changes: [
+          { 
+            type: "add_variant", 
+            variantId: offer.variantId, 
+            quantity: 1, 
+            discount: { 
+              value: offer.discountValue, 
+              valueType: offer.discountType === "percentage" ? "percentage" : "fixed_amount",
+              title: "Special Offer"
+            } 
+          }
+        ] 
       });
 
-      // 2. Add item to order via Shopify's applyChangeset API
-      // Note: In MVP we are skipping the strict changeset calculation to keep it simple, 
-      // but typically we'd request to add a variant ID here.
-      // const changes = await calculateChangeset({ changes: [{ type: "add_variant", variantId: ... }] });
-      // await applyChangeset(changes.calculatedPurchase);
+      if (changes.errors && changes.errors.length > 0) {
+        throw new Error(changes.errors[0].message);
+      }
 
-      // Finish extension
-      done();
+      // 2. Apply Changeset (This actually charges the card!)
+      const applyResult = await applyChangeset(changes.calculatedPurchase?.token);
+      
+      if (applyResult.status === "success") {
+        // 3. Track success in our analytics
+        fetch(`${APP_URL}/api/events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            shop: shopDomain,
+            offerId: offer.id,
+            eventType: "accepted",
+            upsellRevenue: finalPrice
+          })
+        }).catch(e => console.error(e));
+        
+        done();
+      } else {
+        throw new Error("Payment could not be processed for the upsell.");
+      }
     } catch (err) {
       console.error(err);
-      done();
+      setErrorText("There was an issue processing your request. Please try again.");
+      setIsAccepting(false);
     }
   };
 
@@ -113,17 +143,23 @@ export function App({ extensionPoint, storage }) {
           eventType: "declined"
         })
       });
-      done();
     } catch (err) {
+      console.error(err);
+    } finally {
       done();
     }
   };
 
   return (
     <BlockStack spacing="loose">
-      <CalloutBanner title="Special Offer Unlocked!">
-        Add this item to your order with one click. No need to re-enter payment details.
+      <CalloutBanner title="Wait! We have a special offer just for you.">
+        Add this item to your order with 1-click. No need to re-enter your payment details.
       </CalloutBanner>
+      
+      {errorText && (
+        <TextBlock color="critical">{errorText}</TextBlock>
+      )}
+
       <Layout
         maxInlineSize={0.95}
         media={[
@@ -133,23 +169,22 @@ export function App({ extensionPoint, storage }) {
         ]}
       >
         <View>
-          {/* Placeholder image, ideally fetched from Storefront API based on offer.upsellProductId */}
-          <Image source="https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png" />
+          <Image source={offer.productImage || "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png"} />
         </View>
         <View />
         <BlockStack spacing="xloose">
           <TextContainer>
-            <Heading>{offer.name}</Heading>
+            <Heading>{offer.productTitle || offer.name}</Heading>
             <TextBlock>
-              Exclusive discount: {discountText}
+              Get it now for only <TextBlock emphasized>{formattedFinalPrice}</TextBlock> (was {formattedOriginalPrice})!
             </TextBlock>
           </TextContainer>
           <BlockStack spacing="tight">
-            <Button submit onPress={handleAccept} loading={isAccepting}>
-              Accept Offer
+            <Button submit onPress={handleAccept} loading={isAccepting} disabled={isDeclining}>
+              Pay {formattedFinalPrice} Now
             </Button>
-            <Button onPress={handleDecline} disabled={isAccepting} plain>
-              Decline
+            <Button onPress={handleDecline} disabled={isAccepting || isDeclining} plain>
+              No thanks, decline offer
             </Button>
           </BlockStack>
         </BlockStack>
