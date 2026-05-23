@@ -17,12 +17,26 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const totalOffers = store?.offers.length || 0;
   const activeOffers = store?.offers.filter(o => o.isActive).length || 0;
 
-  // Mock analytics for the dashboard
+  // Aggregate real analytics from the database
+  const analyticsData = await prisma.analyticsDaily.aggregate({
+    where: { storeId: store?.id },
+    _sum: {
+      impressions: true,
+      accepts: true,
+      totalUpsellRevenue: true,
+    }
+  });
+
+  const impressions = analyticsData._sum.impressions || 0;
+  const accepts = analyticsData._sum.accepts || 0;
+  const revenue = analyticsData._sum.totalUpsellRevenue || 0;
+  const convRate = impressions > 0 ? ((accepts / impressions) * 100).toFixed(1) : "0.0";
+
   const analytics = {
-    totalRevenue: "$1,240.50",
-    conversionRate: "4.2%",
-    upsellViews: 1250,
-    acceptedOffers: 52
+    totalRevenue: `$${revenue.toFixed(2)}`,
+    conversionRate: `${convRate}%`,
+    upsellViews: impressions,
+    acceptedOffers: accepts
   };
 
   return json({ totalOffers, activeOffers, analytics });
