@@ -42,9 +42,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({ totalOffers, activeOffers, analytics });
 };
 
+import { useState, useCallback } from "react";
+import { Modal } from "@shopify/polaris";
+
 export default function Dashboard() {
   const { totalOffers, activeOffers, analytics } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const [isWizardOpen, setIsWizardOpen] = useState(totalOffers === 0);
+  const handleWizardClose = useCallback(() => setIsWizardOpen(false), []);
 
   return (
     <Page
@@ -103,8 +108,49 @@ export default function Dashboard() {
               </BlockStack>
             </Card>
           </Layout.Section>
+
+          <Layout.Section variant="oneThird">
+            <Card background="bg-surface-secondary">
+              <BlockStack gap="400">
+                <Text as="h2" variant="headingLg">Need Help?</Text>
+                <Text as="p" variant="bodyMd">
+                  Our team is here to help you get the most out of Beta-Upsell. We usually respond within 24 hours.
+                </Text>
+                <Button url="mailto:support@betaupsell.com" target="_blank">
+                  Email Support
+                </Button>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
         </Layout>
       </BlockStack>
+
+      <Modal
+        open={isWizardOpen}
+        onClose={handleWizardClose}
+        title="Welcome to Beta-Upsell! 🎉"
+        primaryAction={{
+          content: 'Auto-suggest first offer',
+          onAction: () => {
+            handleWizardClose();
+            navigate("/app/offers/new");
+          },
+        }}
+        secondaryActions={[
+          {
+            content: 'Skip for now',
+            onAction: handleWizardClose,
+          },
+        ]}
+      >
+        <Modal.Section>
+          <BlockStack gap="400">
+            <Text as="p" variant="bodyLg">
+              Let's get your first upsell live! We can automatically suggest a high-converting product pairing from your catalog to get you started.
+            </Text>
+          </BlockStack>
+        </Modal.Section>
+      </Modal>
     </Page>
   );
 }

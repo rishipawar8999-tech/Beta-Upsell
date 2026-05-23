@@ -145,7 +145,7 @@ export default function Pricing() {
                   <List.Item>Up to 2 Active Offers</List.Item>
                   <List.Item>Cart Drawer Upsells</List.Item>
                   <List.Item>Basic Analytics</List.Item>
-                  <List.Item>3-Day Free Trial</List.Item>
+                  <List.Item>7-Day Free Trial</List.Item>
                 </List>
 
                 <Button 
