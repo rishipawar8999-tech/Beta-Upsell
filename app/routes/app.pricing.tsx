@@ -69,7 +69,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   await billing.request({
     plan: planToSelect,
     isTest: true,
-    returnUrl: `https://${process.env.SHOPIFY_APP_URL}/app`,
     ...(trialDaysOverride !== undefined ? { trialDays: trialDaysOverride } : {})
   });
 
