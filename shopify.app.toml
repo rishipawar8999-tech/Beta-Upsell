@@ -1,7 +1,7 @@
 # This file stores configurations for your Shopify app.
 
-client_id = "2b06465c44607f5c25f1628b5fd8e9c3"
-name = "Beta-Upsell"
+client_id = "71c0d5b7b05db41c52286ce4d0e4f3c0"
+name = "Upsell"
 application_url = "https://beta-upsell-production.up.railway.app"
 embedded = true
 
