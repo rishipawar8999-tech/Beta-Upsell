@@ -18,7 +18,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { billing } = await authenticate.admin(request);
+  const { billing, session } = await authenticate.admin(request);
   const formData = await request.formData();
   const planToSelect = formData.get("plan") as string;
 
@@ -69,6 +69,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   await billing.request({
     plan: planToSelect,
     isTest: true,
+    returnUrl: `https://${session.shop}/admin/apps/${process.env.SHOPIFY_API_KEY}/app/pricing`,
     ...(trialDaysOverride !== undefined ? { trialDays: trialDaysOverride } : {})
   });
 
