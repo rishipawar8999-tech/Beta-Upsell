@@ -12,7 +12,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     plans: ["Basic Plan", "Pro Plan"],
     isTest: true,
     onFailure: async () => {
-      throw redirect("/app/pricing");
+      const url = new URL(request.url);
+      throw redirect(`/app/pricing?${url.searchParams.toString()}`);
     },
   });
 
