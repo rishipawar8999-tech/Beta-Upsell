@@ -22,15 +22,7 @@ import { getRecommendationsForProduct } from "../recommendations.server";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { billing, admin } = await authenticate.admin(request);
   
-  // 1. Enforce Billing
-  await billing.require({
-    plans: ["Basic Plan", "Pro Plan"],
-    isTest: true,
-    onFailure: async () => {
-      const url = new URL(request.url);
-      throw redirect(`/app/pricing?${url.searchParams.toString()}`);
-    },
-  });
+  // 1. Remove forced billing for Freemium model
 
   const billingCheck = await billing.check({
     plans: ["Basic Plan", "Pro Plan"],
@@ -97,6 +89,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   
   if (store && activePlan === "Basic Plan" && store.offers.length >= 2) {
     return json({ error: "Basic Plan limit reached. Upgrade to Pro to create more active offers." }, { status: 403 });
+  }
+  if (store && activePlan === null && store.offers.length >= 1) {
+    return json({ error: "Free Plan limit reached (1 active offer max). Upgrade to Basic or Pro to create more." }, { status: 403 });
   }
   if (!store) {
     store = await prisma.store.create({
@@ -209,7 +204,7 @@ export default function NewOffer() {
 
   const { recommendations = [], activePlan, activeOfferCount } = fetcher.data || useLoaderData<typeof loader>();
 
-  const isLimitReached = activePlan === "Basic Plan" && activeOfferCount >= 2;
+  const isLimitReached = (activePlan === "Basic Plan" && activeOfferCount >= 2) || (activePlan === null && activeOfferCount >= 1);
 
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
@@ -255,8 +250,12 @@ export default function NewOffer() {
         <Layout.Section>
           <BlockStack gap="500">
             {isLimitReached && (
-              <Banner title="Basic Plan Limit Reached" tone="warning" action={{ content: "Upgrade to Pro", onAction: () => navigate("/app/pricing") }}>
-                <p>You have reached the maximum of 2 active offers on the Basic Plan. Please upgrade to Pro to create unlimited offers.</p>
+              <Banner title="Offer Limit Reached" tone="warning" action={{ content: "Upgrade Plan", onAction: () => navigate("/app/pricing") }}>
+                <p>
+                  You have reached the maximum number of active offers for your current plan 
+                  ({activePlan === "Basic Plan" ? "2 offers" : "1 offer"}). 
+                  Please upgrade your plan to create more.
+                </p>
               </Banner>
             )}
 

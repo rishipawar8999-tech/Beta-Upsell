@@ -7,17 +7,7 @@ import prisma from "../db.server";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, billing } = await authenticate.admin(request);
   
-  // Enforce Billing
-  await billing.require({
-    plans: ["Basic Plan", "Pro Plan"],
-    isTest: true,
-    onFailure: async () => {
-      throw new Response("", {
-        status: 302,
-        headers: { Location: "/app/pricing" }
-      });
-    },
-  });
+  // 1. Remove forced billing for Freemium model
 
   const shopDomain = session.shop;
 

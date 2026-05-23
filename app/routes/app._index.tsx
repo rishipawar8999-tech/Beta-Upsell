@@ -7,16 +7,6 @@ import prisma from "../db.server";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, billing } = await authenticate.admin(request);
   
-  // Enforce Billing - Redirect to pricing if they have no plan
-  await billing.require({
-    plans: ["Basic Plan", "Pro Plan"],
-    isTest: true,
-    onFailure: async () => {
-      const url = new URL(request.url);
-      throw redirect(`/app/pricing?${url.searchParams.toString()}`);
-    },
-  });
-
   const shopDomain = session.shop;
 
   const store = await prisma.store.findUnique({

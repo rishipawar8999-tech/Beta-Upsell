@@ -12,7 +12,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const activePlan = billingCheck.hasActivePayment 
     ? billingCheck.appSubscriptions[0].name 
-    : null;
+    : "Free Plan";
 
   return json({ activePlan });
 };
@@ -22,17 +22,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const planToSelect = formData.get("plan") as string;
 
-  if (planToSelect !== "Basic Plan" && planToSelect !== "Pro Plan") {
+  if (planToSelect !== "Free Plan" && planToSelect !== "Basic Plan" && planToSelect !== "Pro Plan") {
     return json({ error: "Invalid plan selected" }, { status: 400 });
   }
 
-  // Robust Trial Logic
-  // Check if they ever had a subscription to prevent trial abuse
   const billingCheck = await billing.check({
     plans: ["Basic Plan", "Pro Plan"],
     isTest: true,
   });
 
+  // Handle downgrading to Free Plan
+  if (planToSelect === "Free Plan") {
+    if (billingCheck.hasActivePayment) {
+      await billing.cancel({
+        subscriptionId: billingCheck.appSubscriptions[0].id,
+        isTest: true,
+        prorate: true,
+      });
+    }
+    return json({ success: true });
+  }
+
+  // Robust Trial Logic
   let trialDaysOverride = undefined;
 
   // If upgrading/downgrading or resubscribing, calculate if they get a trial
@@ -96,7 +107,34 @@ export default function Pricing() {
         </Text>
 
         <Grid>
-          <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+          <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 4, xl: 4 }}>
+            <Card>
+              <BlockStack gap="400">
+                <Text as="h2" variant="headingLg">Free Plan</Text>
+                <Text as="h3" variant="heading3xl">$0 <Text as="span" variant="bodyMd" tone="subdued">/month</Text></Text>
+                {activePlan === "Free Plan" && <Badge tone="success">Active Plan</Badge>}
+                
+                <List>
+                  <List.Item>1 Active Offer Limit</List.Item>
+                  <List.Item>Cart Drawer Upsells</List.Item>
+                  <List.Item>Basic Analytics</List.Item>
+                  <List.Item>Community Support</List.Item>
+                </List>
+
+                <Button 
+                  size="large" 
+                  fullWidth 
+                  disabled={activePlan === "Free Plan" || isSubmitting}
+                  onClick={() => handleSelectPlan("Free Plan")}
+                  loading={isSubmitting}
+                >
+                  {activePlan === "Free Plan" ? "Current Plan" : "Downgrade to Free"}
+                </Button>
+              </BlockStack>
+            </Card>
+          </Grid.Cell>
+
+          <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 4, xl: 4 }}>
             <Card>
               <BlockStack gap="400">
                 <Text as="h2" variant="headingLg">Basic Plan</Text>
@@ -115,6 +153,7 @@ export default function Pricing() {
                   fullWidth 
                   disabled={activePlan === "Basic Plan" || isSubmitting}
                   onClick={() => handleSelectPlan("Basic Plan")}
+                  loading={isSubmitting}
                 >
                   {activePlan === "Basic Plan" ? "Current Plan" : "Select Basic"}
                 </Button>
@@ -122,7 +161,7 @@ export default function Pricing() {
             </Card>
           </Grid.Cell>
 
-          <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+          <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 4, xl: 4 }}>
             <Card background="bg-surface-active">
               <BlockStack gap="400">
                 <Text as="h2" variant="headingLg">Pro Plan</Text>
