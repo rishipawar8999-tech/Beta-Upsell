@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
+import { useState, useCallback, useEffect } from "react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node";
 import {
   Page,
   Layout,
@@ -10,11 +10,38 @@ import {
   Button,
   InlineStack,
   Text,
+  Badge,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { useNavigate, useSubmit, useActionData, useNavigation } from "@remix-run/react";
+import { useNavigate, useSubmit, useActionData, useNavigation, useLoaderData, useFetcher } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
+import { getRecommendationsForProduct } from "../recommendations.server";
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { billing, admin } = await authenticate.admin(request);
+  
+  // 1. Enforce Billing
+  await billing.require({
+    plans: ["Flat Premium Plan"],
+    isTest: true,
+    onFailure: async () => billing.request({
+      plan: "Flat Premium Plan",
+      isTest: true,
+    }),
+  });
+
+  // 2. Fetch recommendations if triggerProductId is provided
+  const url = new URL(request.url);
+  const triggerProductId = url.searchParams.get("triggerProductId");
+  
+  if (triggerProductId) {
+    const recommendations = await getRecommendationsForProduct(admin, triggerProductId);
+    return json({ recommendations });
+  }
+
+  return json({ recommendations: [] });
+};
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
@@ -32,7 +59,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json({ error: "Offer name and Upsell Product ID are required." }, { status: 400 });
   }
 
-  // 1. Get or Create the Store record
   let store = await prisma.store.findUnique({ where: { shopDomain } });
   if (!store) {
     store = await prisma.store.create({
@@ -43,7 +69,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
   }
 
-  // 2. Create the Offer in Postgres
   const newOffer = await prisma.offer.create({
     data: {
       storeId: store.id,
@@ -57,49 +82,36 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     },
   });
 
-  // 3. Sync all active Cart offers to Shopify App Metafield
   if (placement === "cart") {
     const activeCartOffers = await prisma.offer.findMany({
       where: { storeId: store.id, type: "cart", isActive: true },
       select: { id: true, name: true, upsellProductId: true, discountType: true, discountValue: true }
     });
 
-    // We use GraphQL to update the Shop's App Metafield
     const metafieldsSetMutation = `
       mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
         metafieldsSet(metafields: $metafields) {
-          metafields {
-            id
-            key
-            value
-          }
-          userErrors {
-            field
-            message
-          }
+          metafields { id key value }
         }
       }
     `;
 
-    // Assuming we use the App's reserved namespace 'beta_upsell'
-    const variables = {
-      metafields: [
-        {
-          namespace: "beta_upsell",
-          key: "active_offers",
-          type: "json",
-          value: JSON.stringify(activeCartOffers),
-          ownerId: `gid://shopify/Shop/${session.shop}` // Need the global Shop ID, but usually we query for current shop ID first.
-        }
-      ]
-    };
-    
-    // For MVP, we'll skip the exact Metafield set if ownerId requires an extra query, and do it simply:
     const shopQuery = await admin.graphql(`{ shop { id } }`);
     const shopData = await shopQuery.json();
-    variables.metafields[0].ownerId = shopData.data.shop.id;
-
-    await admin.graphql(metafieldsSetMutation, { variables });
+    
+    await admin.graphql(metafieldsSetMutation, {
+      variables: {
+        metafields: [
+          {
+            namespace: "beta_upsell",
+            key: "active_offers",
+            type: "json",
+            value: JSON.stringify(activeCartOffers),
+            ownerId: shopData.data.shop.id
+          }
+        ]
+      }
+    });
   }
 
   return redirect("/app");
@@ -111,6 +123,7 @@ export default function NewOffer() {
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSaving = navigation.state === "submitting";
+  const fetcher = useFetcher<typeof loader>();
 
   const [offerName, setOfferName] = useState("");
   const [placement, setPlacement] = useState("post_purchase");
@@ -118,6 +131,16 @@ export default function NewOffer() {
   const [upsellProductId, setUpsellProductId] = useState("");
   const [discountType, setDiscountType] = useState("percentage");
   const [discountValue, setDiscountValue] = useState("");
+
+  // Debounce and fetch recommendations when trigger product changes
+  useEffect(() => {
+    if (triggerProductId && triggerProductId.includes("gid://shopify/Product/")) {
+      const timeoutId = setTimeout(() => {
+        fetcher.load(`?triggerProductId=${encodeURIComponent(triggerProductId)}`);
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [triggerProductId]);
 
   const handleSave = useCallback(() => {
     const formData = new FormData();
@@ -130,6 +153,8 @@ export default function NewOffer() {
 
     submit(formData, { method: "post" });
   }, [offerName, placement, triggerProductId, upsellProductId, discountType, discountValue, submit]);
+
+  const recommendations = fetcher.data?.recommendations || [];
 
   return (
     <Page
@@ -186,6 +211,24 @@ export default function NewOffer() {
                   autoComplete="off"
                   helpText="e.g. gid://shopify/Product/123456789. If blank, triggers on all products."
                 />
+                
+                {recommendations.length > 0 && (
+                  <BlockStack gap="200">
+                    <Text as="p" tone="subdued">AI Suggested Upsells for this product:</Text>
+                    <InlineStack gap="200">
+                      {recommendations.map((rec: any) => (
+                        <Button 
+                          key={rec.id} 
+                          onClick={() => setUpsellProductId(rec.id)}
+                          pressed={upsellProductId === rec.id}
+                        >
+                          {rec.title} (Score: {rec.score})
+                        </Button>
+                      ))}
+                    </InlineStack>
+                  </BlockStack>
+                )}
+
                 <TextField
                   label="Upsell Product ID"
                   value={upsellProductId}

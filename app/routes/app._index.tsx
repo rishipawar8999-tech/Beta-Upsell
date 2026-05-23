@@ -17,8 +17,18 @@ import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const shopDomain = session.shop;
+
+  // Enforce Billing
+  await billing.require({
+    plans: ["Flat Premium Plan"],
+    isTest: true,
+    onFailure: async () => billing.request({
+      plan: "Flat Premium Plan",
+      isTest: true,
+    }),
+  });
 
   const store = await prisma.store.findUnique({
     where: { shopDomain },
