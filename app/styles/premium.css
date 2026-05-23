@@ -1,0 +1,70 @@
+/* premium.css - Custom UI Enhancements for Beta-Upsell */
+
+:root {
+  --beta-shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+  --beta-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --beta-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --beta-shadow-hover: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+  --beta-radius: 12px;
+  --beta-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Add premium shadows and softer borders to all Polaris Cards */
+.Polaris-Card {
+  box-shadow: var(--beta-shadow-md) !important;
+  border-radius: var(--beta-radius) !important;
+  border: 1px solid rgba(0,0,0,0.05) !important;
+  transition: var(--beta-transition) !important;
+}
+
+/* Interactive Card Hover States */
+.Polaris-Card:hover {
+  box-shadow: var(--beta-shadow-hover) !important;
+  transform: translateY(-2px);
+}
+
+/* Enhance CalloutCards to look like premium onboarding blocks */
+.Polaris-CalloutCard__Container {
+  border-radius: var(--beta-radius) !important;
+  overflow: hidden;
+  box-shadow: var(--beta-shadow-lg) !important;
+  background: linear-gradient(145deg, #ffffff, #f9fafb) !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+}
+
+/* Primary Buttons Gradient (Shopify allows overriding button styles for brand matching) */
+.Polaris-Button--variantPrimary {
+  background: linear-gradient(135deg, #000000 0%, #333333 100%) !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15) !important;
+  border: none !important;
+  transition: var(--beta-transition) !important;
+}
+
+.Polaris-Button--variantPrimary:hover {
+  background: linear-gradient(135deg, #333333 0%, #555555 100%) !important;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2) !important;
+  transform: translateY(-1px);
+}
+
+/* Ensure secondary buttons look crisp */
+.Polaris-Button {
+  border-radius: 6px !important;
+}
+
+/* Smooth layout transitions */
+.Polaris-Layout__Section {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Make stats pop on the dashboard */
+.Polaris-Text--heading3xl {
+  background: -webkit-linear-gradient(45deg, #111, #555);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800 !important;
+}
