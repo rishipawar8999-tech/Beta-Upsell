@@ -14,48 +14,83 @@ import {
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
+  const shopDomain = session.shop;
 
-  // Mock data for V1 dashboard
-  const analytics = {
-    totalRevenue: 12450.0,
-    acceptanceRate: 18.5,
-    aovLift: 12.3,
+  const store = await prisma.store.findUnique({
+    where: { shopDomain },
+    include: {
+      offers: {
+        include: {
+          analytics: true
+        }
+      },
+      analytics: {
+        where: {
+          date: {
+            gte: new Date(new Date().setDate(new Date().getDate() - 30))
+          }
+        }
+      }
+    }
+  });
+
+  if (!store) {
+    return {
+      analytics: { totalRevenue: 0, acceptanceRate: 0, aovLift: 0 },
+      topOffers: []
+    };
+  }
+
+  // Calculate high level metrics
+  let totalRevenue = 0;
+  let totalImpressions = 0;
+  let totalAccepts = 0;
+  let totalAovLift = 0;
+
+  store.analytics.forEach(day => {
+    totalRevenue += day.totalUpsellRevenue;
+    totalImpressions += day.impressions;
+    totalAccepts += day.accepts;
+    totalAovLift += day.avgOrderValueLift;
+  });
+
+  const acceptanceRate = totalImpressions > 0 ? ((totalAccepts / totalImpressions) * 100).toFixed(1) : 0;
+  const aovLift = store.analytics.length > 0 ? (totalAovLift / store.analytics.length).toFixed(2) : 0;
+
+  const topOffers = store.offers.map(offer => {
+    let impressions = 0;
+    let accepts = 0;
+    let revenue = 0;
+
+    offer.analytics.forEach(a => {
+      impressions += a.impressions;
+      accepts += a.accepts;
+      revenue += a.totalUpsellRevenue;
+    });
+
+    return {
+      id: offer.id,
+      name: offer.name,
+      type: offer.type,
+      status: offer.isActive ? "Active" : "Paused",
+      impressions,
+      accepts,
+      revenue
+    };
+  }).sort((a, b) => b.revenue - a.revenue);
+
+  return {
+    analytics: {
+      totalRevenue,
+      acceptanceRate,
+      aovLift,
+    },
+    topOffers
   };
-
-  const topOffers = [
-    {
-      id: "1",
-      name: "Post-Purchase Sneaker Care Kit",
-      type: "Post-purchase",
-      impressions: 1200,
-      accepts: 250,
-      revenue: 4500,
-      status: "Active",
-    },
-    {
-      id: "2",
-      name: "Cart Drawer Socks Pack",
-      type: "Cart",
-      impressions: 3400,
-      accepts: 850,
-      revenue: 6800,
-      status: "Active",
-    },
-    {
-      id: "3",
-      name: "Checkout Priority Shipping",
-      type: "Checkout",
-      impressions: 800,
-      accepts: 115,
-      revenue: 1150,
-      status: "Paused",
-    },
-  ];
-
-  return { analytics, topOffers };
 };
 
 export default function Index() {

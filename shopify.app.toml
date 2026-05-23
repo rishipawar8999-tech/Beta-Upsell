@@ -1,6 +1,16 @@
 # This file stores configurations for your Shopify app.
 
-client_id = ""
+client_id = "2b06465c44607f5c25f1628b5fd8e9c3"
+name = "Beta-Upsell"
+application_url = "https://beta-upsell-production.up.railway.app"
+embedded = true
+
+[auth]
+redirect_urls = [
+  "https://beta-upsell-production.up.railway.app/auth/callback",
+  "https://beta-upsell-production.up.railway.app/auth/shopify/callback",
+  "https://beta-upsell-production.up.railway.app/api/auth/callback"
+]
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes

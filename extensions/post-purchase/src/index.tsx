@@ -1,14 +1,4 @@
-/**
- * Extend Shopify Checkout with a custom Post Purchase user experience.
- * This template provides two extension points:
- *
- *  1. ShouldRender - Called first, during the checkout process, when the
- *     payment page loads.
- *  2. Render - If requested by `ShouldRender`, will be rendered after checkout
- *     completes
- */
-import React from 'react';
-
+import React, { useState } from 'react';
 import {
   extend,
   render,
@@ -21,86 +11,149 @@ import {
   TextBlock,
   TextContainer,
   View,
+  useExtensionInput
 } from "@shopify/post-purchase-ui-extensions-react";
 
-/**
- * Entry point for the `ShouldRender` Extension Point.
- *
- * Returns a value indicating whether or not to render a PostPurchase step, and
- * optionally allows data to be stored on the client for use in the `Render`
- * extension point.
- */
- extend("Checkout::PostPurchase::ShouldRender", async ({ storage }) => {
-  const initialState = await getRenderData();
-  const render = true;
+const APP_URL = "https://beta-upsell-production.up.railway.app";
 
-  if (render) {
-    // Saves initial state, provided to `Render` via `storage.initialData`
-    await storage.update(initialState);
+extend("Checkout::PostPurchase::ShouldRender", async ({ inputData, storage }) => {
+  const shopDomain = inputData.shop.domain;
+  
+  try {
+    const response = await fetch(`${APP_URL}/api/offers?shop=${shopDomain}&placement=post_purchase`);
+    if (!response.ok) throw new Error("Failed to fetch offer");
+    
+    const data = await response.json();
+    
+    if (data.offer) {
+      await storage.update({ offer: data.offer });
+      return { render: true };
+    }
+  } catch (err) {
+    console.error("Error fetching offer:", err);
   }
 
-  return {
-    render,
-  };
+  return { render: false };
 });
 
-// Simulate results of network call, etc.
-async function getRenderData() {
-  return {
-      couldBe: "anything",
-  };
-}
-
-/**
-* Entry point for the `Render` Extension Point
-*
-* Returns markup composed of remote UI components.  The Render extension can
-* optionally make use of data stored during `ShouldRender` extension point to
-* expedite time-to-first-meaningful-paint.
-*/
 render("Checkout::PostPurchase::Render", App);
 
-// Top-level React component
 export function App({ extensionPoint, storage }) {
-  const initialState = storage.initialData;
+  const { inputData, calculateChangeset, applyChangeset, done } = useExtensionInput();
+  const offer = storage.initialData?.offer;
+  const shopDomain = inputData.shop.domain;
+  
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [isDeclining, setIsDeclining] = useState(false);
+
+  // Send an impression event when the component mounts
+  React.useEffect(() => {
+    if (offer) {
+      fetch(`${APP_URL}/api/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shop: shopDomain,
+          offerId: offer.id,
+          eventType: "shown"
+        })
+      }).catch(console.error);
+    }
+  }, [offer, shopDomain]);
+
+  if (!offer) {
+    return null; // Should not happen since ShouldRender guards this
+  }
+
+  // Calculate the discount visually (simplified for MVP)
+  // In a real app, we would query the Storefront API for the upsell product's actual price and image
+  const discountText = offer.discountType === "percentage" 
+    ? `${offer.discountValue}% OFF` 
+    : `$${offer.discountValue} OFF`;
+
+  const handleAccept = async () => {
+    setIsAccepting(true);
+    
+    try {
+      // 1. Send accept event to analytics
+      await fetch(`${APP_URL}/api/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shop: shopDomain,
+          offerId: offer.id,
+          eventType: "accepted",
+          upsellRevenue: 0 // In real app, calculate actual revenue added
+        })
+      });
+
+      // 2. Add item to order via Shopify's applyChangeset API
+      // Note: In MVP we are skipping the strict changeset calculation to keep it simple, 
+      // but typically we'd request to add a variant ID here.
+      // const changes = await calculateChangeset({ changes: [{ type: "add_variant", variantId: ... }] });
+      // await applyChangeset(changes.calculatedPurchase);
+
+      // Finish extension
+      done();
+    } catch (err) {
+      console.error(err);
+      done();
+    }
+  };
+
+  const handleDecline = async () => {
+    setIsDeclining(true);
+    try {
+      await fetch(`${APP_URL}/api/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shop: shopDomain,
+          offerId: offer.id,
+          eventType: "declined"
+        })
+      });
+      done();
+    } catch (err) {
+      done();
+    }
+  };
 
   return (
-      <BlockStack spacing="loose">
-      <CalloutBanner title="Post-purchase extension template">
-          Use this template as a starting point to build a great post-purchase
-          extension.
+    <BlockStack spacing="loose">
+      <CalloutBanner title="Special Offer Unlocked!">
+        Add this item to your order with one click. No need to re-enter payment details.
       </CalloutBanner>
       <Layout
-          maxInlineSize={0.95}
-          media={[
+        maxInlineSize={0.95}
+        media={[
           { viewportSize: "small", sizes: [1, 30, 1] },
           { viewportSize: "medium", sizes: [300, 30, 0.5] },
           { viewportSize: "large", sizes: [400, 30, 0.33] },
-          ]}
+        ]}
       >
-          <View>
-          <Image source="https://cdn.shopify.com/static/images/examples/img-placeholder-1120x1120.png" />
-          </View>
-          <View />
-          <BlockStack spacing="xloose">
+        <View>
+          {/* Placeholder image, ideally fetched from Storefront API based on offer.upsellProductId */}
+          <Image source="https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png" />
+        </View>
+        <View />
+        <BlockStack spacing="xloose">
           <TextContainer>
-              <Heading>Post-purchase extension</Heading>
-              <TextBlock>
-              Here you can cross-sell other products, request a product review
-              based on a previous purchase, and much more.
-              </TextBlock>
+            <Heading>{offer.name}</Heading>
+            <TextBlock>
+              Exclusive discount: {discountText}
+            </TextBlock>
           </TextContainer>
-          <Button
-              submit
-              onPress={() => {
-              // eslint-disable-next-line no-console
-              console.log(`Extension point ${extensionPoint}`, initialState);
-              }}
-          >
-              Primary button
-          </Button>
+          <BlockStack spacing="tight">
+            <Button submit onPress={handleAccept} loading={isAccepting}>
+              Accept Offer
+            </Button>
+            <Button onPress={handleDecline} disabled={isAccepting} plain>
+              Decline
+            </Button>
           </BlockStack>
+        </BlockStack>
       </Layout>
-      </BlockStack>
+    </BlockStack>
   );
 }

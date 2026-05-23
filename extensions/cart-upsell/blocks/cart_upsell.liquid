@@ -1,24 +1,65 @@
+{% assign active_offers = shop.metafields.beta_upsell.active_offers.value %}
+{% assign target_offer = null %}
+
+{% if active_offers %}
+  {% for offer in active_offers %}
+    {% assign target_offer = offer %}
+    {% break %}
+  {% endfor %}
+{% endif %}
+
 <div class="cart-upsell-widget" style="padding: 15px; border: 1px solid {{ block.settings.border_color }}; border-radius: 8px; background: {{ block.settings.bg_color }}; margin-top: 15px;">
   <h4 style="margin: 0 0 10px; color: {{ block.settings.text_color }}; font-weight: bold;">
     {{ block.settings.heading | default: 't:title' | t }}
   </h4>
-  {% if block.settings.upsell_product != blank %}
-    {% assign product = all_products[block.settings.upsell_product] %}
+  {% if target_offer != null %}
+    {% assign product_gid = target_offer.upsellProductId | split: '/' | last %}
+    {% assign upsell_product = null %}
+    
+    {% for prod in collections.all.products %}
+      {% if prod.id == product_gid %}
+        {% assign upsell_product = prod %}
+      {% endif %}
+    {% endfor %}
+
+    {% if upsell_product == null %}
+      {% assign upsell_product = all_products[target_offer.upsellProductId] %}
+    {% endif %}
+    
     <div style="display: flex; align-items: center; gap: 15px;">
-      <img src="{{ product.featured_image | img_url: '100x100' }}" alt="{{ product.title }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+      <img src="{{ upsell_product.featured_image | img_url: '100x100' }}" alt="{{ upsell_product.title }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
       <div style="flex-grow: 1;">
-        <p style="margin: 0 0 5px; font-size: 14px; font-weight: 500;">{{ product.title }}</p>
-        <p style="margin: 0; color: #555; font-size: 13px;">{{ product.price | money }}</p>
+        <p style="margin: 0 0 5px; font-size: 14px; font-weight: 500;">{{ upsell_product.title }}</p>
+        <p style="margin: 0; color: #555; font-size: 13px;">
+          {% if target_offer.discountType == 'percentage' %}
+            {{ upsell_product.price | times: 100 | minus: target_offer.discountValue | divided_by: 100 | money }}
+          {% else %}
+            {{ upsell_product.price | minus: target_offer.discountValue | money }}
+          {% endif %}
+        </p>
       </div>
       <form action="/cart/add" method="post" enctype="multipart/form-data">
-        <input type="hidden" name="id" value="{{ product.variants.first.id }}">
+        <input type="hidden" name="id" value="{{ upsell_product.variants.first.id }}">
+        <input type="hidden" name="properties[_upsell_offer_id]" value="{{ target_offer.id }}">
         <button type="submit" style="background: {{ block.settings.button_color }}; color: {{ block.settings.button_text_color }}; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">
           {{ 't:add_to_cart' | t }}
         </button>
       </form>
     </div>
+    
+    <script>
+      fetch('/apps/beta-upsell/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shop: Shopify.shop,
+          offerId: '{{ target_offer.id }}',
+          eventType: 'shown'
+        })
+      });
+    </script>
   {% else %}
-    <p style="font-size: 13px; color: #666;">Configure an upsell product in the app settings.</p>
+    <p style="font-size: 13px; color: #666;">No active cart offers available.</p>
   {% endif %}
 </div>
 
