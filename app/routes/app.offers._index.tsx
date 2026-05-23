@@ -1,6 +1,6 @@
-import { json, LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
-import { Page, Layout, Card, BlockStack, Text, Button, IndexTable, Badge } from "@shopify/polaris";
+import { json, LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
+import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
+import { Page, Layout, Card, Text, Button, IndexTable, Badge, EmptyState } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
@@ -33,9 +33,65 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({ offers: store?.offers || [] });
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { session, admin } = await authenticate.admin(request);
+  const formData = await request.formData();
+  
+  if (request.method === "DELETE") {
+    const offerId = formData.get("offerId") as string;
+    
+    // Find the offer first to know its type
+    const offer = await prisma.offer.findUnique({ where: { id: offerId } });
+    if (!offer) return json({ success: false }, { status: 404 });
+
+    await prisma.offer.delete({ where: { id: offerId } });
+
+    // If it was a cart offer, we must re-sync the active cart offers to Shopify metafields!
+    if (offer.type === "cart") {
+      const store = await prisma.store.findUnique({ where: { shopDomain: session.shop } });
+      if (store) {
+        const activeCartOffers = await prisma.offer.findMany({
+          where: { storeId: store.id, type: "cart", isActive: true },
+          select: { id: true, name: true, upsellProductId: true, discountType: true, discountValue: true }
+        });
+
+        const metafieldsSetMutation = `
+          mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
+            metafieldsSet(metafields: $metafields) {
+              metafields { id key value }
+            }
+          }
+        `;
+
+        const shopQuery = await admin.graphql(`{ shop { id } }`);
+        const shopData = await shopQuery.json();
+        
+        await admin.graphql(metafieldsSetMutation, {
+          variables: {
+            metafields: [
+              {
+                namespace: "beta_upsell",
+                key: "active_offers",
+                type: "json",
+                value: JSON.stringify(activeCartOffers),
+                ownerId: shopData.data.shop.id
+              }
+            ]
+          }
+        });
+      }
+    }
+
+    return json({ success: true });
+  }
+
+  return json({ error: "Method not allowed" }, { status: 405 });
+};
+
 export default function OffersIndex() {
   const { offers } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const submit = useSubmit();
 
   const rowMarkup = offers.map(
     ({ id, name, type, isActive, discountType, discountValue }, index) => (
@@ -54,6 +110,21 @@ export default function OffersIndex() {
             {isActive ? "Active" : "Draft"}
           </Badge>
         </IndexTable.Cell>
+        <IndexTable.Cell>
+          <Button 
+            tone="critical" 
+            variant="plain" 
+            onClick={() => {
+              if (confirm("Are you sure you want to delete this offer?")) {
+                const formData = new FormData();
+                formData.append("offerId", id);
+                submit(formData, { method: "delete" });
+              }
+            }}
+          >
+            Delete
+          </Button>
+        </IndexTable.Cell>
       </IndexTable.Row>
     )
   );
@@ -66,19 +137,33 @@ export default function OffersIndex() {
       <Layout>
         <Layout.Section>
           <Card padding="0">
-            <IndexTable
-              resourceName={{ singular: 'offer', plural: 'offers' }}
-              itemCount={offers.length}
-              headings={[
-                { title: 'Name' },
-                { title: 'Placement' },
-                { title: 'Discount' },
-                { title: 'Status' },
-              ]}
-              selectable={false}
-            >
-              {rowMarkup}
-            </IndexTable>
+            {offers.length === 0 ? (
+              <EmptyState
+                heading="No offers created yet"
+                action={{
+                  content: "Create Offer",
+                  onAction: () => navigate("/app/offers/new"),
+                }}
+                image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+              >
+                <p>Create your first upsell offer to start boosting revenue.</p>
+              </EmptyState>
+            ) : (
+              <IndexTable
+                resourceName={{ singular: 'offer', plural: 'offers' }}
+                itemCount={offers.length}
+                headings={[
+                  { title: 'Name' },
+                  { title: 'Placement' },
+                  { title: 'Discount' },
+                  { title: 'Status' },
+                  { title: 'Actions' },
+                ]}
+                selectable={false}
+              >
+                {rowMarkup}
+              </IndexTable>
+            )}
           </Card>
         </Layout.Section>
       </Layout>

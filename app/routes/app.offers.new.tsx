@@ -11,6 +11,7 @@ import {
   InlineStack,
   Text,
   Badge,
+  Banner,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { useNavigate, useSubmit, useActionData, useNavigation, useLoaderData, useFetcher } from "@remix-run/react";
@@ -30,16 +31,34 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     },
   });
 
+  const billingCheck = await billing.check({
+    plans: ["Basic Plan", "Pro Plan"],
+    isTest: true,
+  });
+
+  const activePlan = billingCheck.hasActivePayment 
+    ? billingCheck.appSubscriptions[0].name 
+    : null;
+
   // 2. Fetch recommendations if triggerProductId is provided
   const url = new URL(request.url);
   const triggerProductId = url.searchParams.get("triggerProductId");
   
+  let recommendations = [];
   if (triggerProductId) {
-    const recommendations = await getRecommendationsForProduct(admin, triggerProductId);
-    return json({ recommendations });
+    recommendations = await getRecommendationsForProduct(admin, triggerProductId);
   }
 
-  return json({ recommendations: [] });
+  // 3. Check active offer count
+  const shopDomain = admin.rest.session.shop;
+  const store = await prisma.store.findUnique({
+    where: { shopDomain },
+    include: { offers: { where: { isActive: true } } }
+  });
+  
+  const activeOfferCount = store?.offers.length || 0;
+
+  return json({ recommendations, activePlan, activeOfferCount });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -55,10 +74,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const discountValue = parseFloat(formData.get("discountValue") as string) || 0;
 
   if (!offerName || !upsellProductId) {
-    return json({ error: "Offer name and Upsell Product ID are required." }, { status: 400 });
+    return json({ error: "Offer name and Upsell Product are required." }, { status: 400 });
   }
 
-  let store = await prisma.store.findUnique({ where: { shopDomain } });
+  if (discountValue < 0) {
+    return json({ error: "Discount value cannot be negative." }, { status: 400 });
+  }
+
+  if (discountType === "percentage" && discountValue > 100) {
+    return json({ error: "Percentage discount cannot exceed 100%." }, { status: 400 });
+  }
+
+  const billingCheck = await billing.check({
+    plans: ["Basic Plan", "Pro Plan"],
+    isTest: true,
+  });
+
+  const activePlan = billingCheck.hasActivePayment ? billingCheck.appSubscriptions[0].name : null;
+
+  let store = await prisma.store.findUnique({ where: { shopDomain }, include: { offers: { where: { isActive: true } } } });
+  
+  if (store && activePlan === "Basic Plan" && store.offers.length >= 2) {
+    return json({ error: "Basic Plan limit reached. Upgrade to Pro to create more active offers." }, { status: 403 });
+  }
   if (!store) {
     store = await prisma.store.create({
       data: {
@@ -152,7 +190,28 @@ export default function NewOffer() {
     }
   }, [triggerProductId]);
 
+  const { recommendations = [], activePlan, activeOfferCount } = fetcher.data || useLoaderData<typeof loader>();
+
+  const isLimitReached = activePlan === "Basic Plan" && activeOfferCount >= 2;
+
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+
   const handleSave = useCallback(() => {
+    const errors: string[] = [];
+    if (!offerName) errors.push("Offer Name is required.");
+    if (!upsellProductId) errors.push("Upsell Product is required.");
+    
+    const parsedDiscount = parseFloat(discountValue);
+    if (isNaN(parsedDiscount) || parsedDiscount < 0) errors.push("Discount must be a positive number.");
+    if (discountType === "percentage" && parsedDiscount > 100) errors.push("Percentage discount cannot exceed 100%.");
+
+    if (errors.length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setFormErrors([]);
+
     const formData = new FormData();
     formData.append("offerName", offerName);
     formData.append("placement", placement);
@@ -164,15 +223,13 @@ export default function NewOffer() {
     submit(formData, { method: "post" });
   }, [offerName, placement, triggerProductId, upsellProductId, discountType, discountValue, submit]);
 
-  const recommendations = fetcher.data?.recommendations || [];
-
   return (
     <Page
       breadcrumbs={[{ content: "Dashboard", onAction: () => navigate("/app") }]}
       title="Create New Offer"
     >
       <TitleBar title="Create New Offer">
-        <button variant="primary" onClick={handleSave} disabled={isSaving}>
+        <button variant="primary" onClick={handleSave} disabled={isSaving || isLimitReached}>
           {isSaving ? "Saving..." : "Save Offer"}
         </button>
       </TitleBar>
@@ -180,10 +237,19 @@ export default function NewOffer() {
       <Layout>
         <Layout.Section>
           <BlockStack gap="500">
-            {actionData?.error && (
-              <Text as="p" tone="critical">
-                {actionData.error}
-              </Text>
+            {isLimitReached && (
+              <Banner title="Basic Plan Limit Reached" tone="warning" action={{ content: "Upgrade to Pro", onAction: () => navigate("/app/pricing") }}>
+                <p>You have reached the maximum of 2 active offers on the Basic Plan. Please upgrade to Pro to create unlimited offers.</p>
+              </Banner>
+            )}
+
+            {(actionData?.error || formErrors.length > 0) && (
+              <Banner title="Please fix the following errors:" tone="critical">
+                <List>
+                  {actionData?.error && <List.Item>{actionData.error}</List.Item>}
+                  {formErrors.map((err, i) => <List.Item key={i}>{err}</List.Item>)}
+                </List>
+              </Banner>
             )}
             <Card>
               <BlockStack gap="400">
@@ -289,7 +355,7 @@ export default function NewOffer() {
             </Card>
 
             <InlineStack align="end">
-              <Button variant="primary" onClick={handleSave} loading={isSaving}>
+              <Button variant="primary" onClick={handleSave} loading={isSaving} disabled={isLimitReached}>
                 Save Offer
               </Button>
             </InlineStack>
