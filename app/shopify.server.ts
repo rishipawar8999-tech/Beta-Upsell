@@ -51,10 +51,14 @@ const shopify = shopifyApp({
   },
   billing: {
     "Flat Premium Plan": {
-      amount: 29,
-      currencyCode: "USD",
-      interval: BillingInterval.Every30Days,
       replacementBehavior: BillingReplacementBehavior.ApplyImmediately,
+      lineItems: [
+        {
+          amount: 29,
+          currencyCode: "USD",
+          interval: BillingInterval.Every30Days,
+        }
+      ]
     },
   },
   future: {
