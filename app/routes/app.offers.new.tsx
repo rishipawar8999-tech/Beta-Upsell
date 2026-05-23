@@ -23,12 +23,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   
   // 1. Enforce Billing
   await billing.require({
-    plans: ["Flat Premium Plan"],
+    plans: ["Basic Plan", "Pro Plan"],
     isTest: true,
-    onFailure: async () => billing.request({
-      plan: "Flat Premium Plan",
-      isTest: true,
-    }),
+    onFailure: async () => {
+      throw redirect("/app/pricing");
+    },
   });
 
   // 2. Fetch recommendations if triggerProductId is provided
@@ -128,9 +127,20 @@ export default function NewOffer() {
   const [offerName, setOfferName] = useState("");
   const [placement, setPlacement] = useState("post_purchase");
   const [triggerProductId, setTriggerProductId] = useState("");
+  const [triggerProductTitle, setTriggerProductTitle] = useState("");
   const [upsellProductId, setUpsellProductId] = useState("");
+  const [upsellProductTitle, setUpsellProductTitle] = useState("");
   const [discountType, setDiscountType] = useState("percentage");
   const [discountValue, setDiscountValue] = useState("");
+
+  const selectProduct = async (setterId: (id: string) => void, setterTitle: (title: string) => void) => {
+    // @ts-ignore
+    const selected = await shopify.resourcePicker({ type: 'product', multiple: false, action: 'select' });
+    if (selected && selected.length > 0) {
+      setterId(selected[0].id);
+      setterTitle(selected[0].title);
+    }
+  };
 
   // Debounce and fetch recommendations when trigger product changes
   useEffect(() => {
@@ -204,13 +214,18 @@ export default function NewOffer() {
                 <Text as="h2" variant="headingMd">
                   Products
                 </Text>
-                <TextField
-                  label="Trigger Product ID (Optional)"
-                  value={triggerProductId}
-                  onChange={setTriggerProductId}
-                  autoComplete="off"
-                  helpText="e.g. gid://shopify/Product/123456789. If blank, triggers on all products."
-                />
+                <BlockStack gap="200">
+                  <Text as="p" variant="bodyMd" fontWeight="bold">Trigger Product (Optional)</Text>
+                  <Text as="p" tone="subdued">Select a product that will trigger this upsell when added to cart or purchased.</Text>
+                  <InlineStack gap="400" align="start">
+                    <Button onClick={() => selectProduct(setTriggerProductId, setTriggerProductTitle)}>
+                      {triggerProductId ? "Change Product" : "Browse Products"}
+                    </Button>
+                    {triggerProductTitle && (
+                      <Badge tone="info">{triggerProductTitle}</Badge>
+                    )}
+                  </InlineStack>
+                </BlockStack>
                 
                 {recommendations.length > 0 && (
                   <BlockStack gap="200">
@@ -219,7 +234,10 @@ export default function NewOffer() {
                       {recommendations.map((rec: any) => (
                         <Button 
                           key={rec.id} 
-                          onClick={() => setUpsellProductId(rec.id)}
+                          onClick={() => {
+                            setUpsellProductId(rec.id);
+                            setUpsellProductTitle(rec.title);
+                          }}
                           pressed={upsellProductId === rec.id}
                         >
                           {rec.title} (Score: {rec.score})
@@ -229,13 +247,18 @@ export default function NewOffer() {
                   </BlockStack>
                 )}
 
-                <TextField
-                  label="Upsell Product ID"
-                  value={upsellProductId}
-                  onChange={setUpsellProductId}
-                  autoComplete="off"
-                  helpText="e.g. gid://shopify/Product/987654321"
-                />
+                <BlockStack gap="200">
+                  <Text as="p" variant="bodyMd" fontWeight="bold">Upsell Product</Text>
+                  <Text as="p" tone="subdued">Select the product you want to offer as an upsell.</Text>
+                  <InlineStack gap="400" align="start">
+                    <Button onClick={() => selectProduct(setUpsellProductId, setUpsellProductTitle)} variant="primary">
+                      {upsellProductId ? "Change Upsell Product" : "Select Upsell Product"}
+                    </Button>
+                    {upsellProductTitle && (
+                      <Badge tone="success">{upsellProductTitle}</Badge>
+                    )}
+                  </InlineStack>
+                </BlockStack>
               </BlockStack>
             </Card>
 
