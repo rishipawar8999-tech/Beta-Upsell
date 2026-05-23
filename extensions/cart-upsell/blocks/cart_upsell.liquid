@@ -8,58 +8,72 @@
   {% endfor %}
 {% endif %}
 
-<div class="cart-upsell-widget" style="padding: 15px; border: 1px solid {{ block.settings.border_color }}; border-radius: 8px; background: {{ block.settings.bg_color }}; margin-top: 15px;">
-  <h4 style="margin: 0 0 10px; color: {{ block.settings.text_color }}; font-weight: bold;">
-    {{ block.settings.heading | default: 't:title' | t }}
+<div class="cart-upsell-widget" style="padding: 16px; border: 1px solid {{ block.settings.border_color }}; border-radius: 12px; background: {{ block.settings.bg_color }}; margin-top: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: inherit;">
+  <h4 style="margin: 0 0 12px; color: {{ block.settings.text_color }}; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+    {{ block.settings.heading | default: 'Limited Time Offer' }}
   </h4>
-  {% if target_offer != null %}
-    {% assign product_gid = target_offer.upsellProductId | split: '/' | last %}
-    {% assign upsell_product = null %}
-    
-    {% for prod in collections.all.products %}
-      {% if prod.id == product_gid %}
-        {% assign upsell_product = prod %}
-      {% endif %}
-    {% endfor %}
 
-    {% if upsell_product == null %}
-      {% assign upsell_product = all_products[target_offer.upsellProductId] %}
-    {% endif %}
+  {% if target_offer != null and target_offer.handle != blank %}
+    {% assign upsell_product = all_products[target_offer.handle] %}
     
-    <div style="display: flex; align-items: center; gap: 15px;">
-      <img src="{{ upsell_product.featured_image | img_url: '100x100' }}" alt="{{ upsell_product.title }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
-      <div style="flex-grow: 1;">
-        <p style="margin: 0 0 5px; font-size: 14px; font-weight: 500;">{{ upsell_product.title }}</p>
-        <p style="margin: 0; color: #555; font-size: 13px;">
-          {% if target_offer.discountType == 'percentage' %}
-            {{ upsell_product.price | times: 100 | minus: target_offer.discountValue | divided_by: 100 | money }}
-          {% else %}
-            {{ upsell_product.price | minus: target_offer.discountValue | money }}
-          {% endif %}
-        </p>
+    {% if upsell_product != blank %}
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="{{ upsell_product.url }}" style="flex-shrink: 0;">
+          <img src="{{ upsell_product.featured_image | img_url: '120x120', crop: 'center' }}" alt="{{ upsell_product.title }}" style="width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #eee;">
+        </a>
+        
+        <div style="flex-grow: 1; min-width: 0;">
+          <a href="{{ upsell_product.url }}" style="text-decoration: none; color: inherit;">
+            <p style="margin: 0 0 4px; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: {{ block.settings.text_color }};">
+              {{ upsell_product.title }}
+            </p>
+          </a>
+          
+          <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px;">
+            {% if target_offer.discountType == 'percentage' %}
+              {% assign discount_decimal = target_offer.discountValue | divided_by: 100.0 %}
+              {% assign discount_amount = upsell_product.price | times: discount_decimal %}
+              {% assign final_price = upsell_product.price | minus: discount_amount %}
+            {% else %}
+              {% assign discount_cents = target_offer.discountValue | times: 100 %}
+              {% assign final_price = upsell_product.price | minus: discount_cents %}
+            {% endif %}
+            
+            <span style="font-size: 15px; font-weight: 700; color: {{ block.settings.text_color }};">
+              {{ final_price | money }}
+            </span>
+            <span style="font-size: 13px; text-decoration: line-through; color: #888;">
+              {{ upsell_product.price | money }}
+            </span>
+          </div>
+          
+          <form action="/cart/add" method="post" enctype="multipart/form-data" style="margin: 0;">
+            <input type="hidden" name="id" value="{{ upsell_product.variants.first.id }}">
+            <input type="hidden" name="properties[_upsell_offer_id]" value="{{ target_offer.id }}">
+            <button type="submit" style="width: 100%; background: {{ block.settings.button_color }}; color: {{ block.settings.button_text_color }}; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: opacity 0.2s ease;">
+              {{ 't:add_to_cart' | t | default: 'Add to Order' }}
+            </button>
+          </form>
+        </div>
       </div>
-      <form action="/cart/add" method="post" enctype="multipart/form-data">
-        <input type="hidden" name="id" value="{{ upsell_product.variants.first.id }}">
-        <input type="hidden" name="properties[_upsell_offer_id]" value="{{ target_offer.id }}">
-        <button type="submit" style="background: {{ block.settings.button_color }}; color: {{ block.settings.button_text_color }}; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">
-          {{ 't:add_to_cart' | t }}
-        </button>
-      </form>
-    </div>
-    
-    <script>
-      fetch('/apps/beta-upsell/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shop: Shopify.shop,
-          offerId: '{{ target_offer.id }}',
-          eventType: 'shown'
-        })
-      });
-    </script>
+      
+      <script>
+        // Track impression
+        fetch('/apps/beta-upsell/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            shop: Shopify.shop,
+            offerId: '{{ target_offer.id }}',
+            eventType: 'shown'
+          })
+        }).catch(e => console.error(e));
+      </script>
+    {% else %}
+      <p style="font-size: 13px; color: #666; margin: 0;">Product unavailable.</p>
+    {% endif %}
   {% else %}
-    <p style="font-size: 13px; color: #666;">No active cart offers available.</p>
+    <p style="font-size: 13px; color: #666; margin: 0;">No active offers right now.</p>
   {% endif %}
 </div>
 
@@ -76,27 +90,22 @@
       "default": "Special Offer Just For You!"
     },
     {
-      "type": "product",
-      "id": "upsell_product",
-      "label": "Upsell Product"
-    },
-    {
       "type": "color",
       "id": "bg_color",
       "label": "Background Color",
-      "default": "#f9f9f9"
+      "default": "#ffffff"
     },
     {
       "type": "color",
       "id": "border_color",
       "label": "Border Color",
-      "default": "#e0e0e0"
+      "default": "#eaeaea"
     },
     {
       "type": "color",
       "id": "text_color",
       "label": "Text Color",
-      "default": "#333333"
+      "default": "#111111"
     },
     {
       "type": "color",

@@ -55,6 +55,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           select: { id: true, name: true, upsellProductId: true, discountType: true, discountValue: true }
         });
 
+        const enrichedOffers = await Promise.all(activeCartOffers.map(async (offer) => {
+          const response = await admin.graphql(
+            `query getProductHandle($id: ID!) {
+              product(id: $id) {
+                handle
+              }
+            }`,
+            { variables: { id: offer.upsellProductId } }
+          );
+          const data = await response.json();
+          return {
+            ...offer,
+            handle: data.data?.product?.handle || null
+          };
+        }));
+
         const metafieldsSetMutation = `
           mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
             metafieldsSet(metafields: $metafields) {
@@ -73,7 +89,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 namespace: "beta_upsell",
                 key: "active_offers",
                 type: "json",
-                value: JSON.stringify(activeCartOffers),
+                value: JSON.stringify(enrichedOffers),
                 ownerId: shopData.data.shop.id
               }
             ]
