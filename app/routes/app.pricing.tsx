@@ -2,6 +2,7 @@ import { json, LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useSubmit, useNavigation } from "@remix-run/react";
 import { Page, Layout, Card, BlockStack, Text, Button, Grid, Badge, List } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
+import { calculateRemainingTrialDays } from "../utils/billing";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { billing } = await authenticate.admin(request);
@@ -44,36 +45,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   // Robust Trial Logic
-  let trialDaysOverride = undefined;
+  let trialDaysOverride: number | undefined = undefined;
 
   // If upgrading/downgrading or resubscribing, calculate if they get a trial
   if (billingCheck.appSubscriptions && billingCheck.appSubscriptions.length > 0) {
     const existingSub = billingCheck.appSubscriptions[0];
-    
-    if (existingSub.name === "Basic Plan") {
-      // If they are on Basic and upgrading to Pro, or cancelling and resubscribing
-      // If they are upgrading to Pro DURING a basic trial, we carry over the trial days
-      if (planToSelect === "Pro Plan" && existingSub.trialDays && existingSub.createdAt) {
-        const createdDate = new Date(existingSub.createdAt);
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - createdDate.getTime());
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        
-        const remainingTrial = existingSub.trialDays - diffDays;
-        
-        if (remainingTrial > 0) {
-          trialDaysOverride = remainingTrial;
-        } else {
-          trialDaysOverride = 0;
-        }
-      } else {
-        // If they already used the Basic trial and are resubscribing to Basic, NO trial.
-        trialDaysOverride = 0;
-      }
-    } else {
-      // If they had Pro, they never get a trial on downgrade
-      trialDaysOverride = 0;
-    }
+    trialDaysOverride = calculateRemainingTrialDays(
+      planToSelect,
+      existingSub.name,
+      existingSub.trialDays,
+      existingSub.createdAt
+    );
   }
 
   // Request the new charge
