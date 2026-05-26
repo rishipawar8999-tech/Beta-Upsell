@@ -116,6 +116,36 @@ export default function Dashboard() {
           </Grid>
         </Layout.Section>
 
+        {totalOffers < 3 && (
+          <Layout.Section>
+            <Card background="bg-surface-secondary">
+              <BlockStack gap="400">
+                <Text as="h2" variant="headingLg">How Beta-Upsell Works</Text>
+                <Grid>
+                  <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 4, xl: 4 }}>
+                    <BlockStack gap="200">
+                      <Text as="h3" variant="headingMd">1. Pick Products</Text>
+                      <Text as="p" variant="bodyMd">Choose a high-traffic product and a complementary item to bundle with it.</Text>
+                    </BlockStack>
+                  </Grid.Cell>
+                  <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 4, xl: 4 }}>
+                    <BlockStack gap="200">
+                      <Text as="h3" variant="headingMd">2. Display Widget</Text>
+                      <Text as="p" variant="bodyMd">We automatically inject a beautiful bundle widget directly on your product page or cart drawer.</Text>
+                    </BlockStack>
+                  </Grid.Cell>
+                  <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 4, xl: 4 }}>
+                    <BlockStack gap="200">
+                      <Text as="h3" variant="headingMd">3. Increase AOV</Text>
+                      <Text as="p" variant="bodyMd">Customers add both items to their cart with one click, instantly increasing your average order value.</Text>
+                    </BlockStack>
+                  </Grid.Cell>
+                </Grid>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+        )}
+
         <Layout.Section>
           <Card>
             <BlockStack gap="400">

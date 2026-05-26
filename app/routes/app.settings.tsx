@@ -122,6 +122,13 @@ export default function Settings() {
               <Banner title="Settings saved successfully!" tone="success" />
             )}
             
+            <Banner title="Why customize?" tone="info">
+              <p>
+                To maximize your conversion rate, we highly recommend setting the <b>Primary Button Color</b> below to exactly match the primary button color used on your store's theme. 
+                This makes the upsell widget feel like a native part of your brand.
+              </p>
+            </Banner>
+            
             <Card>
               <BlockStack gap="400">
                 <Text as="h2" variant="headingMd">Cart Drawer Customization</Text>

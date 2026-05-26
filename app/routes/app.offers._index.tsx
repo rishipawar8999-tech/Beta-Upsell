@@ -145,14 +145,25 @@ export default function OffersIndex() {
           <Card padding="0">
             {offers.length === 0 ? (
               <EmptyState
-                heading="No offers created yet"
+                heading="Create your first Upsell Offer"
                 action={{
                   content: "Create Offer",
                   onAction: () => navigate("/app/offers/new"),
                 }}
                 image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
               >
-                <p>Create your first upsell offer to start boosting revenue.</p>
+                <BlockStack gap="400">
+                  <Text as="p" variant="bodyMd">
+                    An <b>Offer</b> is a pairing of two products designed to increase your Average Order Value.
+                  </Text>
+                  <div style={{ textAlign: 'left', display: 'inline-block', margin: '0 auto' }}>
+                    <ul style={{ paddingLeft: '20px', margin: 0, color: 'var(--p-color-text-subdued)' }}>
+                      <li><b>Trigger Product:</b> The main item the customer is viewing.</li>
+                      <li><b>Upsell Product:</b> A complementary item (like an accessory) offered as a bundle.</li>
+                      <li><b>Discount:</b> An optional incentive (like 10% off) if they buy both together.</li>
+                    </ul>
+                  </div>
+                </BlockStack>
               </EmptyState>
             ) : (
               <IndexTable
