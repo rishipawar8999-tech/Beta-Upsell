@@ -1,0 +1,10 @@
+{
+  "name": "checkout-upsell",
+  "dependencies": {
+    "@shopify/ui-extensions-react": "^2024.1.x",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

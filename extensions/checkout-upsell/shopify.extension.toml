@@ -1,0 +1,13 @@
+api_version = "2024-01"
+
+[[extensions]]
+name = "checkout-upsell"
+type = "ui_extension"
+handle = "checkout-upsell"
+
+[[extensions.targeting]]
+module = "./src/Checkout.tsx"
+target = "purchase.checkout.block.render"
+
+[extensions.capabilities]
+network_access = true

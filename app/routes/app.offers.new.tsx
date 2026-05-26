@@ -87,11 +87,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   let store = await prisma.store.findUnique({ where: { shopDomain }, include: { offers: { where: { isActive: true } } } });
   
-  if (store && activePlan === "Basic Plan" && placement === "post_purchase") {
-    return json({ error: "Post-Purchase offers are only available on the Pro Plan." }, { status: 403 });
+  if (store && activePlan === "Basic Plan" && (placement === "post_purchase" || placement === "checkout")) {
+    return json({ error: "This placement is only available on the Pro Plan." }, { status: 403 });
   }
-  if (store && activePlan === null && placement === "post_purchase") {
-    return json({ error: "Post-Purchase offers are only available on the Pro Plan." }, { status: 403 });
+  if (store && activePlan === null && (placement === "post_purchase" || placement === "checkout")) {
+    return json({ error: "This placement is only available on the Pro Plan." }, { status: 403 });
   }
   if (store && activePlan === null && store.offers.length >= 1) {
     return json({ error: "Free Plan limit reached (1 active offer max). Upgrade to Basic or Pro to create more." }, { status: 403 });
@@ -215,6 +215,11 @@ export default function NewOffer() {
     { 
       label: (activePlan === "Basic Plan" || activePlan === null) ? "Post-Purchase (Pro Only)" : "Post-Purchase (1-Click)", 
       value: "post_purchase",
+      disabled: activePlan === "Basic Plan" || activePlan === null
+    },
+    { 
+      label: (activePlan === "Basic Plan" || activePlan === null) ? "Inline Checkout (Pro Only)" : "Inline Checkout", 
+      value: "checkout",
       disabled: activePlan === "Basic Plan" || activePlan === null
     }
   ];
