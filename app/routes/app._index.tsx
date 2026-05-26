@@ -55,99 +55,97 @@ export default function Dashboard() {
       title="Dashboard Overview"
       primaryAction={<Button variant="primary" onClick={() => navigate("/app/offers/new")}>Create Offer</Button>}
     >
-      <BlockStack gap="500">
+      <Layout>
         {showSetupGuide && (
-          <Layout>
-            <Layout.Section>
-              <CalloutCard
-                title="Welcome to Beta-Upsell! Let's get you set up. 🚀"
-                illustration="https://cdn.shopify.com/s/assets/admin/checkout/settings-customizecart-705f57c725ac05be5a34ec20c05b94298cb8afd100f26ceaf27f6ce7e95ad3e2.svg"
-                primaryAction={{
-                  content: "Enable App Embed in Theme",
-                  url: `https://${shopDomain}/admin/themes/current/editor?context=apps`,
-                  target: "_blank"
-                }}
-                secondaryAction={{
-                  content: "Create your first offer",
-                  onAction: () => navigate("/app/offers/new")
-                }}
-              >
-                <p>
-                  To make your upsells visible to customers, you must first enable the Beta-Upsell app embed in your Shopify Theme Editor. 
-                  Click the button below to automatically open your theme settings.
-                </p>
-              </CalloutCard>
-            </Layout.Section>
-          </Layout>
+          <Layout.Section>
+            <CalloutCard
+              title="Welcome to Beta-Upsell! Let's get you set up. 🚀"
+              illustration="https://cdn.shopify.com/s/assets/admin/checkout/settings-customizecart-705f57c725ac05be5a34ec20c05b94298cb8afd100f26ceaf27f6ce7e95ad3e2.svg"
+              primaryAction={{
+                content: "Enable App Embed in Theme",
+                url: `https://${shopDomain}/admin/themes/current/editor?context=apps`,
+                target: "_blank"
+              }}
+              secondaryAction={{
+                content: "Create your first offer",
+                onAction: () => navigate("/app/offers/new")
+              }}
+            >
+              <p>
+                To make your upsells visible to customers, you must first enable the Beta-Upsell app embed in your Shopify Theme Editor. 
+                Click the button below to automatically open your theme settings.
+              </p>
+            </CalloutCard>
+          </Layout.Section>
         )}
 
-        <Grid>
-          <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
-            <Card>
-              <BlockStack gap="200">
-                <Text as="h3" variant="headingSm" tone="subdued">Extra Revenue</Text>
-                <Text as="p" variant="heading3xl">{analytics.totalRevenue}</Text>
-              </BlockStack>
-            </Card>
-          </Grid.Cell>
-          <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
-            <Card>
-              <BlockStack gap="200">
-                <Text as="h3" variant="headingSm" tone="subdued">Conversion Rate</Text>
-                <Text as="p" variant="heading3xl">{analytics.conversionRate}</Text>
-              </BlockStack>
-            </Card>
-          </Grid.Cell>
-          <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
-            <Card>
-              <BlockStack gap="200">
-                <Text as="h3" variant="headingSm" tone="subdued">Total Views</Text>
-                <Text as="p" variant="heading3xl">{analytics.upsellViews}</Text>
-              </BlockStack>
-            </Card>
-          </Grid.Cell>
-          <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
-            <Card>
-              <BlockStack gap="200">
-                <Text as="h3" variant="headingSm" tone="subdued">Accepted Offers</Text>
-                <Text as="p" variant="heading3xl">{analytics.acceptedOffers}</Text>
-              </BlockStack>
-            </Card>
-          </Grid.Cell>
-        </Grid>
+        <Layout.Section>
+          <Grid>
+            <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
+              <Card>
+                <BlockStack gap="200">
+                  <Text as="h3" variant="headingSm" tone="subdued">Extra Revenue</Text>
+                  <Text as="p" variant="heading3xl">{analytics.totalRevenue}</Text>
+                </BlockStack>
+              </Card>
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
+              <Card>
+                <BlockStack gap="200">
+                  <Text as="h3" variant="headingSm" tone="subdued">Conversion Rate</Text>
+                  <Text as="p" variant="heading3xl">{analytics.conversionRate}</Text>
+                </BlockStack>
+              </Card>
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
+              <Card>
+                <BlockStack gap="200">
+                  <Text as="h3" variant="headingSm" tone="subdued">Total Views</Text>
+                  <Text as="p" variant="heading3xl">{analytics.upsellViews}</Text>
+                </BlockStack>
+              </Card>
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
+              <Card>
+                <BlockStack gap="200">
+                  <Text as="h3" variant="headingSm" tone="subdued">Accepted Offers</Text>
+                  <Text as="p" variant="heading3xl">{analytics.acceptedOffers}</Text>
+                </BlockStack>
+              </Card>
+            </Grid.Cell>
+          </Grid>
+        </Layout.Section>
 
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <BlockStack gap="400">
-                <Text as="h2" variant="headingLg">Your Offers</Text>
-                <Box paddingBlockEnd="200">
-                  <Text as="p" variant="bodyMd">
-                    You have {activeOffers} active offers out of {totalOffers} total created.
-                  </Text>
-                </Box>
-                <div>
-                  <Button onClick={() => navigate("/app/offers")}>View All Offers</Button>
-                </div>
-              </BlockStack>
-            </Card>
-          </Layout.Section>
-
-          <Layout.Section variant="oneThird">
-            <Card background="bg-surface-secondary">
-              <BlockStack gap="400">
-                <Text as="h2" variant="headingLg">Need Help?</Text>
+        <Layout.Section>
+          <Card>
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingLg">Your Offers</Text>
+              <Box paddingBlockEnd="200">
                 <Text as="p" variant="bodyMd">
-                  Our team is here to help you get the most out of Beta-Upsell. We usually respond within 24 hours.
+                  You have {activeOffers} active offers out of {totalOffers} total created.
                 </Text>
-                <Button url="mailto:support@betaupsell.com" target="_blank">
-                  Email Support
-                </Button>
-              </BlockStack>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </BlockStack>
+              </Box>
+              <div>
+                <Button onClick={() => navigate("/app/offers")}>View All Offers</Button>
+              </div>
+            </BlockStack>
+          </Card>
+        </Layout.Section>
+
+        <Layout.Section variant="oneThird">
+          <Card background="bg-surface-secondary">
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingLg">Need Help?</Text>
+              <Text as="p" variant="bodyMd">
+                Our team is here to help you get the most out of Beta-Upsell. We usually respond within 24 hours.
+              </Text>
+              <Button url="mailto:support@betaupsell.com" target="_blank">
+                Email Support
+              </Button>
+            </BlockStack>
+          </Card>
+        </Layout.Section>
+      </Layout>
     </Page>
   );
 }
