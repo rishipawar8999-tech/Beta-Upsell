@@ -84,3 +84,19 @@
 .beta-kpi-card-2 { background: linear-gradient(145deg, #eff6ff, #ffffff) !important; border-color: #bfdbfe !important; } /* Blue tint */
 .beta-kpi-card-3 { background: linear-gradient(145deg, #faf5ff, #ffffff) !important; border-color: #ddd6fe !important; } /* Violet tint */
 .beta-kpi-card-4 { background: linear-gradient(145deg, #fff1f2, #ffffff) !important; border-color: #fbcfe8 !important; } /* Pink tint */
+
+/* Pricing Page Equal Height Cards */
+.pricing-card-wrapper {
+  height: 100%;
+}
+.pricing-card-wrapper .Polaris-Card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.pricing-card-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}

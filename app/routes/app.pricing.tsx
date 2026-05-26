@@ -90,85 +90,100 @@ export default function Pricing() {
 
         <Grid>
           <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 4, xl: 4 }}>
-            <Card>
-              <BlockStack gap="400">
-                <Text as="h2" variant="headingLg">Free Plan</Text>
-                <Text as="h3" variant="heading3xl">$0 <Text as="span" variant="bodyMd" tone="subdued">/month</Text></Text>
-                {activePlan === "Free Plan" && <Badge tone="success">Active Plan</Badge>}
-                
-                <List>
-                  <List.Item>1 Active Offer Limit</List.Item>
-                  <List.Item>Cart Drawer Upsells</List.Item>
-                  <List.Item>Basic Analytics</List.Item>
-                  <List.Item>Community Support</List.Item>
-                </List>
-
-                <Button 
-                  size="large" 
-                  fullWidth 
-                  disabled={activePlan === "Free Plan" || isSubmitting}
-                  onClick={() => handleSelectPlan("Free Plan")}
-                  loading={isSubmitting}
-                >
-                  {activePlan === "Free Plan" ? "Current Plan" : "Downgrade to Free"}
-                </Button>
-              </BlockStack>
-            </Card>
+            <div className="pricing-card-wrapper">
+              <Card>
+                <div className="pricing-card-content">
+                  <BlockStack gap="400">
+                    <Text as="h2" variant="headingLg">Free Plan</Text>
+                    <Text as="h3" variant="heading3xl">$0 <Text as="span" variant="bodyMd" tone="subdued">/month</Text></Text>
+                    {activePlan === "Free Plan" && <Badge tone="success">Active Plan</Badge>}
+                    
+                    <List>
+                      <List.Item>1 Active Offer Limit</List.Item>
+                      <List.Item>Cart Drawer Upsells</List.Item>
+                      <List.Item>Basic Analytics</List.Item>
+                      <List.Item>Community Support</List.Item>
+                    </List>
+                  </BlockStack>
+                  <div style={{ marginTop: '24px' }}>
+                    <Button 
+                      size="large" 
+                      fullWidth 
+                      disabled={activePlan === "Free Plan" || isSubmitting}
+                      onClick={() => handleSelectPlan("Free Plan")}
+                      loading={isSubmitting}
+                    >
+                      {activePlan === "Free Plan" ? "Current Plan" : "Downgrade to Free"}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </Grid.Cell>
 
           <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 4, xl: 4 }}>
-            <Card>
-              <BlockStack gap="400">
-                <Text as="h2" variant="headingLg">Basic Plan</Text>
-                <Text as="h3" variant="heading3xl">$9 <Text as="span" variant="bodyMd" tone="subdued">/month</Text></Text>
-                {activePlan === "Basic Plan" && <Badge tone="success">Active Plan</Badge>}
-                
-                <List>
-                  <List.Item>Up to 2 Active Offers</List.Item>
-                  <List.Item>Cart Drawer Upsells</List.Item>
-                  <List.Item>Basic Analytics</List.Item>
-                  <List.Item>7-Day Free Trial</List.Item>
-                </List>
-
-                <Button 
-                  size="large" 
-                  fullWidth 
-                  disabled={activePlan === "Basic Plan" || isSubmitting}
-                  onClick={() => handleSelectPlan("Basic Plan")}
-                  loading={isSubmitting}
-                >
-                  {activePlan === "Basic Plan" ? "Current Plan" : "Select Basic"}
-                </Button>
-              </BlockStack>
-            </Card>
+            <div className="pricing-card-wrapper">
+              <Card>
+                <div className="pricing-card-content">
+                  <BlockStack gap="400">
+                    <Text as="h2" variant="headingLg">Basic Plan</Text>
+                    <Text as="h3" variant="heading3xl">$9 <Text as="span" variant="bodyMd" tone="subdued">/month</Text></Text>
+                    {activePlan === "Basic Plan" && <Badge tone="success">Active Plan</Badge>}
+                    
+                    <List>
+                      <List.Item>Unlimited Active Offers</List.Item>
+                      <List.Item>Cart & Product Page Upsells</List.Item>
+                      <List.Item>Basic Analytics</List.Item>
+                      <List.Item>14-Day Free Trial</List.Item>
+                    </List>
+                  </BlockStack>
+                  <div style={{ marginTop: '24px' }}>
+                    <Button 
+                      size="large" 
+                      fullWidth 
+                      disabled={activePlan === "Basic Plan" || isSubmitting}
+                      onClick={() => handleSelectPlan("Basic Plan")}
+                      loading={isSubmitting}
+                    >
+                      {activePlan === "Basic Plan" ? "Current Plan" : "Select Basic"}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </Grid.Cell>
 
           <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 4, xl: 4 }}>
-            <Card background="bg-surface-active">
-              <BlockStack gap="400">
-                <Text as="h2" variant="headingLg">Pro Plan</Text>
-                <Text as="h3" variant="heading3xl">$29 <Text as="span" variant="bodyMd" tone="subdued">/month</Text></Text>
-                {activePlan === "Pro Plan" && <Badge tone="success">Active Plan</Badge>}
-                
-                <List>
-                  <List.Item>Unlimited Active Offers</List.Item>
-                  <List.Item>Cart & Post-Purchase Upsells</List.Item>
-                  <List.Item>Advanced AI Recommendations</List.Item>
-                  <List.Item>Priority Support</List.Item>
-                </List>
-
-                <Button 
-                  variant="primary" 
-                  size="large" 
-                  fullWidth 
-                  disabled={activePlan === "Pro Plan" || isSubmitting}
-                  onClick={() => handleSelectPlan("Pro Plan")}
-                  loading={isSubmitting}
-                >
-                  {activePlan === "Pro Plan" ? "Current Plan" : "Upgrade to Pro"}
-                </Button>
-              </BlockStack>
-            </Card>
+            <div className="pricing-card-wrapper">
+              <Card background="bg-surface-active">
+                <div className="pricing-card-content">
+                  <BlockStack gap="400">
+                    <Text as="h2" variant="headingLg">Pro Plan</Text>
+                    <Text as="h3" variant="heading3xl">$29 <Text as="span" variant="bodyMd" tone="subdued">/month</Text></Text>
+                    {activePlan === "Pro Plan" && <Badge tone="success">Active Plan</Badge>}
+                    
+                    <List>
+                      <List.Item>Unlimited Active Offers</List.Item>
+                      <List.Item>Post-Purchase & Checkout Extension</List.Item>
+                      <List.Item>Advanced AI Recommendations</List.Item>
+                      <List.Item>Priority Support</List.Item>
+                    </List>
+                  </BlockStack>
+                  <div style={{ marginTop: '24px' }}>
+                    <Button 
+                      variant="primary" 
+                      size="large" 
+                      fullWidth 
+                      disabled={activePlan === "Pro Plan" || isSubmitting}
+                      onClick={() => handleSelectPlan("Pro Plan")}
+                      loading={isSubmitting}
+                    >
+                      {activePlan === "Pro Plan" ? "Current Plan" : "Upgrade to Pro"}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </Grid.Cell>
         </Grid>
       </BlockStack>
