@@ -20,7 +20,7 @@ import prisma from "../db.server";
 import { getRecommendationsForProduct } from "../recommendations.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { billing, admin } = await authenticate.admin(request);
+  const { billing, admin, session } = await authenticate.admin(request);
   
   // 1. Remove forced billing for Freemium model
 
@@ -43,7 +43,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   // 3. Check active offer count
-  const shopDomain = admin.rest.session.shop;
+  const shopDomain = session.shop;
   const store = await prisma.store.findUnique({
     where: { shopDomain },
     include: { offers: { where: { isActive: true } } }
