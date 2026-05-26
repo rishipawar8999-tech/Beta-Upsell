@@ -4,16 +4,24 @@
   --beta-shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
   --beta-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
   --beta-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-  --beta-shadow-hover: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+  --beta-shadow-hover: 0 20px 25px -5px rgba(100, 102, 241, 0.15), 0 10px 10px -5px rgba(100, 102, 241, 0.05);
   --beta-radius: 12px;
-  --beta-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --beta-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Vibrant SaaS Palette */
+  --beta-brand-primary: #6366f1; /* Indigo 500 */
+  --beta-brand-secondary: #8b5cf6; /* Violet 500 */
+  --beta-brand-accent: #ec4899; /* Pink 500 */
+  --beta-gradient-main: linear-gradient(135deg, var(--beta-brand-primary) 0%, var(--beta-brand-secondary) 100%);
+  --beta-gradient-hover: linear-gradient(135deg, var(--beta-brand-secondary) 0%, var(--beta-brand-accent) 100%);
+  --beta-gradient-text: -webkit-linear-gradient(45deg, var(--beta-brand-primary), var(--beta-brand-accent));
 }
 
 /* Add premium shadows and softer borders to all Polaris Cards */
 .Polaris-Card {
   box-shadow: var(--beta-shadow-md) !important;
   border-radius: var(--beta-radius) !important;
-  border: 1px solid rgba(0,0,0,0.05) !important;
+  border: 1px solid rgba(99, 102, 241, 0.08) !important;
   transition: var(--beta-transition) !important;
 }
 
@@ -21,6 +29,7 @@
 .Polaris-Card:hover {
   box-shadow: var(--beta-shadow-hover) !important;
   transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.2) !important;
 }
 
 /* Enhance CalloutCards to look like premium onboarding blocks */
@@ -28,21 +37,22 @@
   border-radius: var(--beta-radius) !important;
   overflow: hidden;
   box-shadow: var(--beta-shadow-lg) !important;
-  background: linear-gradient(145deg, #ffffff, #f9fafb) !important;
-  border: 1px solid rgba(0,0,0,0.08) !important;
+  background: linear-gradient(145deg, #ffffff, #f5f3ff) !important; /* Soft violet tint */
+  border: 1px solid rgba(139, 92, 246, 0.15) !important;
 }
 
-/* Primary Buttons Gradient (Shopify allows overriding button styles for brand matching) */
+/* Primary Buttons Gradient */
 .Polaris-Button--variantPrimary {
-  background: linear-gradient(135deg, #000000 0%, #333333 100%) !important;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.15) !important;
+  background: var(--beta-gradient-main) !important;
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3) !important;
   border: none !important;
+  color: white !important;
   transition: var(--beta-transition) !important;
 }
 
 .Polaris-Button--variantPrimary:hover {
-  background: linear-gradient(135deg, #333333 0%, #555555 100%) !important;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.2) !important;
+  background: var(--beta-gradient-hover) !important;
+  box-shadow: 0 6px 15px rgba(236, 72, 153, 0.3) !important;
   transform: translateY(-1px);
 }
 
@@ -61,10 +71,16 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Make stats pop on the dashboard */
+/* Make stats pop on the dashboard with vibrant gradients */
 .Polaris-Text--heading3xl {
-  background: -webkit-linear-gradient(45deg, #111, #555);
+  background: var(--beta-gradient-text);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800 !important;
 }
+
+/* Custom KPI Card Backgrounds for Dashboard/Analytics */
+.beta-kpi-card-1 { background: linear-gradient(145deg, #f0fdf4, #ffffff) !important; border-color: #bbf7d0 !important; } /* Green tint */
+.beta-kpi-card-2 { background: linear-gradient(145deg, #eff6ff, #ffffff) !important; border-color: #bfdbfe !important; } /* Blue tint */
+.beta-kpi-card-3 { background: linear-gradient(145deg, #faf5ff, #ffffff) !important; border-color: #ddd6fe !important; } /* Violet tint */
+.beta-kpi-card-4 { background: linear-gradient(145deg, #fff1f2, #ffffff) !important; border-color: #fbcfe8 !important; } /* Pink tint */

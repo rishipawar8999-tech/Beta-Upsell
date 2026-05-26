@@ -82,36 +82,44 @@ export default function Dashboard() {
         <Layout.Section>
           <Grid>
             <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
-              <Card>
-                <BlockStack gap="200">
-                  <Text as="h3" variant="headingSm" tone="subdued">Extra Revenue</Text>
-                  <Text as="p" variant="heading3xl">{analytics.totalRevenue}</Text>
-                </BlockStack>
-              </Card>
+              <div className="beta-kpi-card-1" style={{ height: '100%', borderRadius: '12px' }}>
+                <Card>
+                  <BlockStack gap="200">
+                    <Text as="h3" variant="headingSm" tone="subdued">Extra Revenue</Text>
+                    <Text as="p" variant="heading3xl">{analytics.totalRevenue}</Text>
+                  </BlockStack>
+                </Card>
+              </div>
             </Grid.Cell>
             <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
-              <Card>
-                <BlockStack gap="200">
-                  <Text as="h3" variant="headingSm" tone="subdued">Conversion Rate</Text>
-                  <Text as="p" variant="heading3xl">{analytics.conversionRate}</Text>
-                </BlockStack>
-              </Card>
+              <div className="beta-kpi-card-2" style={{ height: '100%', borderRadius: '12px' }}>
+                <Card>
+                  <BlockStack gap="200">
+                    <Text as="h3" variant="headingSm" tone="subdued">Conversion Rate</Text>
+                    <Text as="p" variant="heading3xl">{analytics.conversionRate}</Text>
+                  </BlockStack>
+                </Card>
+              </div>
             </Grid.Cell>
             <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
-              <Card>
-                <BlockStack gap="200">
-                  <Text as="h3" variant="headingSm" tone="subdued">Total Views</Text>
-                  <Text as="p" variant="heading3xl">{analytics.upsellViews}</Text>
-                </BlockStack>
-              </Card>
+              <div className="beta-kpi-card-3" style={{ height: '100%', borderRadius: '12px' }}>
+                <Card>
+                  <BlockStack gap="200">
+                    <Text as="h3" variant="headingSm" tone="subdued">Total Views</Text>
+                    <Text as="p" variant="heading3xl">{analytics.upsellViews}</Text>
+                  </BlockStack>
+                </Card>
+              </div>
             </Grid.Cell>
             <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
-              <Card>
-                <BlockStack gap="200">
-                  <Text as="h3" variant="headingSm" tone="subdued">Accepted Offers</Text>
-                  <Text as="p" variant="heading3xl">{analytics.acceptedOffers}</Text>
-                </BlockStack>
-              </Card>
+              <div className="beta-kpi-card-4" style={{ height: '100%', borderRadius: '12px' }}>
+                <Card>
+                  <BlockStack gap="200">
+                    <Text as="h3" variant="headingSm" tone="subdued">Accepted Offers</Text>
+                    <Text as="p" variant="heading3xl">{analytics.acceptedOffers}</Text>
+                  </BlockStack>
+                </Card>
+              </div>
             </Grid.Cell>
           </Grid>
         </Layout.Section>
