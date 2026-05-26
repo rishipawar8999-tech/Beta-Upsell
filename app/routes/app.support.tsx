@@ -12,7 +12,7 @@ export default function SupportPage() {
     {
       id: "faq1",
       question: "How do I make my upsell widget appear on my store?",
-      answer: "You must enable the Beta-Upsell 'App Embed' in your Shopify Theme Editor. Go to Online Store > Themes > Customize. On the left sidebar, click 'App embeds' and toggle Beta-Upsell to ON."
+      answer: "You must enable the Beta-Upsell 'App Embed' in your Shopify Theme Editor. You can use the 1-click 'Enable App Embed' button directly on your dashboard, or manually go to Online Store > Themes > Customize > App embeds."
     },
     {
       id: "faq2",
@@ -21,18 +21,18 @@ export default function SupportPage() {
     },
     {
       id: "faq3",
-      question: "Can I customize the colors of the widget?",
-      answer: "Yes! Go to the 'Settings' tab in the app to change the primary button color, or use the block settings inside your Theme Editor to change the layout style, background colors, and border radius."
+      question: "How do the AI Recommendations work?",
+      answer: "When you select a Trigger Product, our AI engine automatically scans your store's collections and price correlations to suggest 3 high-converting upsell products. This takes the guesswork out of building offers!"
     },
     {
       id: "faq4",
-      question: "Why can't I create more than 1 active offer?",
-      answer: "The Free Plan is limited to 1 active offer at a time. To create unlimited offers and unlock the Post-Purchase checkout placement, please upgrade to the Pro plan on the 'Pricing' tab."
+      question: "What are the active offer limits?",
+      answer: "The Free Plan is limited to 1 active offer at a time. The Basic Plan ($9/mo) gives you UNLIMITED active offers for Cart and Product pages. To unlock advanced placements (Checkout, Post-Purchase, Thank You page), please upgrade to the Pro plan."
     },
     {
       id: "faq5",
       question: "What happens when a customer accepts an offer?",
-      answer: "If they accept a Cart Drawer or Product Page offer, the upsell item is immediately added to their cart alongside their main item. If they accept a Post-Purchase offer, their credit card is charged for the extra item without them needing to re-enter their payment details."
+      answer: "For Cart & Product Page offers, the item is instantly added to their cart. For Inline Checkout offers, the cart updates without reloading. For Post-Purchase offers, their credit card is charged instantly without re-entering payment details."
     }
   ];
 
