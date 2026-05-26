@@ -87,10 +87,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   let store = await prisma.store.findUnique({ where: { shopDomain }, include: { offers: { where: { isActive: true } } } });
   
-  if (store && activePlan === "Basic Plan" && (placement === "post_purchase" || placement === "checkout")) {
+  if (store && activePlan === "Basic Plan" && (placement === "post_purchase" || placement === "checkout" || placement === "thank_you")) {
     return json({ error: "This placement is only available on the Pro Plan." }, { status: 403 });
   }
-  if (store && activePlan === null && (placement === "post_purchase" || placement === "checkout")) {
+  if (store && activePlan === null && (placement === "post_purchase" || placement === "checkout" || placement === "thank_you")) {
     return json({ error: "This placement is only available on the Pro Plan." }, { status: 403 });
   }
   if (store && activePlan === null && store.offers.length >= 1) {
@@ -220,6 +220,11 @@ export default function NewOffer() {
     { 
       label: (activePlan === "Basic Plan" || activePlan === null) ? "Inline Checkout (Pro Only)" : "Inline Checkout", 
       value: "checkout",
+      disabled: activePlan === "Basic Plan" || activePlan === null
+    },
+    { 
+      label: (activePlan === "Basic Plan" || activePlan === null) ? "Thank You Page (Pro Only)" : "Thank You Page", 
+      value: "thank_you",
       disabled: activePlan === "Basic Plan" || activePlan === null
     }
   ];
