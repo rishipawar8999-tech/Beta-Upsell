@@ -19,58 +19,92 @@
     <div class="beta-fbt-widget" style="padding: 20px; border: 1px solid {{ block.settings.border_color }}; border-radius: 8px; background: {{ block.settings.bg_color }}; margin: 20px 0;">
       <h3 style="margin: 0 0 15px; color: {{ block.settings.text_color }}; font-size: 16px; font-weight: 600;">{{ widget_title }}</h3>
       
-      <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-        <!-- Main Product Image -->
-        <div style="position: relative;">
-          <img src="{{ product.featured_image | img_url: '100x100', crop: 'center' }}" alt="{{ product.title }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #eee;">
-        </div>
-        
-        <!-- Plus Sign -->
-        <div style="font-size: 20px; font-weight: bold; color: #888;">+</div>
-        
-        <!-- Upsell Product Image -->
-        <div style="position: relative;">
-          <img src="{{ upsell_product.featured_image | img_url: '100x100', crop: 'center' }}" alt="{{ upsell_product.title }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #eee;">
-        </div>
-      </div>
-      
-      <div style="margin-bottom: 20px;">
-        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin-bottom: 10px;">
-          <input type="checkbox" checked disabled style="margin-top: 4px;">
-          <div>
-            <span style="font-weight: 600; color: {{ block.settings.text_color }};">This item:</span> {{ product.title }}
-            <div style="font-weight: bold; margin-top: 2px;">{{ product.price | money }}</div>
+      {% assign discount_pct = 0 %}
+      {% if target_offer.discountType == 'percentage' %}
+        {% assign discount_decimal = target_offer.discountValue | divided_by: 100.0 %}
+        {% assign discount_amount = upsell_product.price | times: discount_decimal %}
+        {% assign final_upsell_price = upsell_product.price | minus: discount_amount %}
+        {% assign discount_pct = target_offer.discountValue | round %}
+      {% else %}
+        {% assign discount_cents = target_offer.discountValue | times: 100 %}
+        {% assign final_upsell_price = upsell_product.price | minus: discount_cents %}
+        {% assign saved_pct = discount_cents | times: 100.0 | divided_by: upsell_product.price %}
+        {% assign discount_pct = saved_pct | round %}
+      {% endif %}
+
+      {% if block.settings.layout_style == 'minimal' %}
+        <!-- MINIMAL LAYOUT -->
+        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
+          <img src="{{ upsell_product.featured_image | img_url: '80x80', crop: 'center' }}" style="border-radius: {{ block.settings.border_radius }}px; width: 60px; height: 60px;">
+          <div style="flex-grow: 1;">
+            <div style="font-weight: bold; color: {{ block.settings.text_color }}">{{ upsell_product.title }}</div>
+            <div style="color: {{ block.settings.text_color }}">+ <span id="beta_fbt_upsell_price" data-price="{{ final_upsell_price }}">{{ final_upsell_price | money }}</span></div>
           </div>
-        </label>
+          <input type="checkbox" id="beta_fbt_checkbox" checked style="transform: scale(1.2);">
+        </div>
         
-        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
-          <input type="checkbox" id="beta_fbt_checkbox" checked style="margin-top: 4px;">
-          <div>
-            <span style="color: {{ block.settings.text_color }};">{{ upsell_product.title }}</span>
-            <div style="display: flex; gap: 8px; margin-top: 2px;">
-              {% if target_offer.discountType == 'percentage' %}
-                {% assign discount_decimal = target_offer.discountValue | divided_by: 100.0 %}
-                {% assign discount_amount = upsell_product.price | times: discount_decimal %}
-                {% assign final_upsell_price = upsell_product.price | minus: discount_amount %}
-              {% else %}
-                {% assign discount_cents = target_offer.discountValue | times: 100 %}
-                {% assign final_upsell_price = upsell_product.price | minus: discount_cents %}
-              {% endif %}
-              
-              <span style="font-weight: bold; color: {{ block.settings.text_color }};" id="beta_fbt_upsell_price" data-price="{{ final_upsell_price }}">{{ final_upsell_price | money }}</span>
-              <span style="text-decoration: line-through; color: #888;">{{ upsell_product.price | money }}</span>
+      {% elsif block.settings.layout_style == 'cards' %}
+        <!-- CARDS LAYOUT -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div style="border: 2px solid {{ block.settings.border_color }}; padding: 10px; border-radius: {{ block.settings.border_radius }}px; text-align: center;">
+            <img src="{{ product.featured_image | img_url: '100x100', crop: 'center' }}" style="width: 100%; border-radius: 4px;">
+            <div style="font-weight: bold; margin-top: 5px; font-size: 12px; color: {{ block.settings.text_color }}">{{ product.title }}</div>
+          </div>
+          <div style="border: 2px solid {{ btn_color }}; padding: 10px; border-radius: {{ block.settings.border_radius }}px; text-align: center; position: relative;">
+            {% if block.settings.show_discount_badge and discount_pct > 0 %}
+              <div style="position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Save {{ discount_pct }}%</div>
+            {% endif %}
+            <img src="{{ upsell_product.featured_image | img_url: '100x100', crop: 'center' }}" style="width: 100%; border-radius: 4px;">
+            <div style="font-weight: bold; margin-top: 5px; font-size: 12px; color: {{ block.settings.text_color }}">{{ upsell_product.title }}</div>
+            <input type="checkbox" id="beta_fbt_checkbox" checked style="margin-top: 5px;">
+            <span id="beta_fbt_upsell_price" data-price="{{ final_upsell_price }}" style="display:none;"></span>
+          </div>
+        </div>
+        
+      {% else %}
+        <!-- CLASSIC LAYOUT -->
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+          <div style="position: relative;">
+            <img src="{{ product.featured_image | img_url: '100x100', crop: 'center' }}" alt="{{ product.title }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: {{ block.settings.border_radius }}px; border: 1px solid #eee;">
+          </div>
+          <div style="font-size: 20px; font-weight: bold; color: #888;">+</div>
+          <div style="position: relative;">
+            {% if block.settings.show_discount_badge and discount_pct > 0 %}
+              <div style="position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: bold; z-index: 2;">Save {{ discount_pct }}%</div>
+            {% endif %}
+            <img src="{{ upsell_product.featured_image | img_url: '100x100', crop: 'center' }}" alt="{{ upsell_product.title }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: {{ block.settings.border_radius }}px; border: 1px solid #eee;">
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin-bottom: 10px;">
+            <input type="checkbox" checked disabled style="margin-top: 4px;">
+            <div>
+              <span style="font-weight: 600; color: {{ block.settings.text_color }};">This item:</span> {{ product.title }}
+              <div style="font-weight: bold; margin-top: 2px; color: {{ block.settings.text_color }}">{{ product.price | money }}</div>
             </div>
-          </div>
-        </label>
-      </div>
+          </label>
+          
+          <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="beta_fbt_checkbox" checked style="margin-top: 4px;">
+            <div>
+              <span style="color: {{ block.settings.text_color }};">{{ upsell_product.title }}</span>
+              <div style="display: flex; gap: 8px; margin-top: 2px;">
+                <span style="font-weight: bold; color: {{ block.settings.text_color }};" id="beta_fbt_upsell_price" data-price="{{ final_upsell_price }}">{{ final_upsell_price | money }}</span>
+                <span style="text-decoration: line-through; color: #888;">{{ upsell_product.price | money }}</span>
+              </div>
+            </div>
+          </label>
+        </div>
+      {% endif %}
       
-      <div style="border-top: 1px solid #eee; padding-top: 15px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="border-top: 1px solid {{ block.settings.border_color }}; padding-top: 15px; display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 16px;">
           <span style="color: {{ block.settings.text_color }};">Total price:</span>
           <span style="font-weight: bold; color: {{ block.settings.text_color }};" id="beta_fbt_total_price" data-main-price="{{ product.price }}">{{ product.price | plus: final_upsell_price | money }}</span>
         </div>
         
-        <button id="beta_fbt_add_btn" style="width: 100%; padding: 12px; background: {{ btn_color }}; color: {{ block.settings.button_text_color }}; border: none; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer;">
+        <button id="beta_fbt_add_btn" style="width: 100%; padding: 12px; background: {{ btn_color }}; color: {{ block.settings.button_text_color }}; border: none; border-radius: {{ block.settings.border_radius }}px; font-weight: bold; font-size: 15px; cursor: pointer;">
           Add Bundle to Cart
         </button>
       </div>
@@ -78,6 +112,8 @@
 
     <script>
       (function() {
+        var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+        
         // Track impression
         fetch('/apps/beta-upsell/api/events', {
           method: 'POST',
@@ -85,7 +121,8 @@
           body: JSON.stringify({
             shop: Shopify.shop,
             offerId: '{{ target_offer.id }}',
-            eventType: 'shown'
+            eventType: 'shown',
+            device: isMobile
           })
         }).catch(e => console.error(e));
 
@@ -94,9 +131,8 @@
         var addBtn = document.getElementById('beta_fbt_add_btn');
         var mainPrice = parseInt(totalPriceEl.getAttribute('data-main-price'), 10);
         var upsellPrice = parseInt(document.getElementById('beta_fbt_upsell_price').getAttribute('data-price'), 10);
-        var currencySymbol = totalPriceEl.innerText.replace(/[0-9.,]/g, '').trim() || '$'; // Basic currency fallback
+        var currencySymbol = totalPriceEl.innerText.replace(/[0-9.,]/g, '').trim() || '$'; 
         
-        // Simple money formatter for total update
         function formatMoney(cents) {
           return currencySymbol + (cents / 100).toFixed(2);
         }
@@ -129,7 +165,6 @@
               }
             });
             
-            // Track accepted
             fetch('/apps/beta-upsell/api/events', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -137,18 +172,19 @@
                 shop: Shopify.shop,
                 offerId: '{{ target_offer.id }}',
                 eventType: 'accepted',
-                upsellRevenue: upsellPrice / 100
+                upsellRevenue: upsellPrice / 100,
+                device: isMobile
               })
             }).catch(e => console.error(e));
           } else {
-             // Track declined
              fetch('/apps/beta-upsell/api/events', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 shop: Shopify.shop,
                 offerId: '{{ target_offer.id }}',
-                eventType: 'declined'
+                eventType: 'declined',
+                device: isMobile
               })
             }).catch(e => console.error(e));
           }
@@ -186,6 +222,33 @@
       "id": "heading",
       "label": "Widget Heading",
       "default": "Frequently Bought Together"
+    },
+    {
+      "type": "select",
+      "id": "layout_style",
+      "label": "Layout Style",
+      "options": [
+        { "value": "classic", "label": "Classic List" },
+        { "value": "minimal", "label": "Minimal Inline" },
+        { "value": "cards", "label": "Modern Cards" }
+      ],
+      "default": "classic"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_discount_badge",
+      "label": "Show 'Save %' Badge",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "label": "Border Radius",
+      "default": 6
     },
     {
       "type": "color",
