@@ -169,8 +169,8 @@ export default function Dashboard() {
               <Text as="p" variant="bodyMd">
                 Our team is here to help you get the most out of Beta-Upsell. We usually respond within 24 hours.
               </Text>
-              <Button url="mailto:support@betaupsell.com" target="_blank">
-                Email Support
+              <Button url="mailto:hello@adloomx.com" target="_blank">
+                Email Support (hello@adloomx.com)
               </Button>
             </BlockStack>
           </Card>
