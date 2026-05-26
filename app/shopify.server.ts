@@ -71,7 +71,7 @@ const shopify = shopifyApp({
           interval: BillingInterval.Every30Days,
         }
       ],
-      trialDays: 7,
+      trialDays: 14,
     },
     "Pro Plan": {
       replacementBehavior: BillingReplacementBehavior.ApplyImmediately,

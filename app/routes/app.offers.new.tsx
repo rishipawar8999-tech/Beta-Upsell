@@ -87,8 +87,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   let store = await prisma.store.findUnique({ where: { shopDomain }, include: { offers: { where: { isActive: true } } } });
   
-  if (store && activePlan === "Basic Plan" && store.offers.length >= 2) {
-    return json({ error: "Basic Plan limit reached. Upgrade to Pro to create more active offers." }, { status: 403 });
+  if (store && activePlan === "Basic Plan" && placement === "post_purchase") {
+    return json({ error: "Post-Purchase offers are only available on the Pro Plan." }, { status: 403 });
+  }
+  if (store && activePlan === null && placement === "post_purchase") {
+    return json({ error: "Post-Purchase offers are only available on the Pro Plan." }, { status: 403 });
   }
   if (store && activePlan === null && store.offers.length >= 1) {
     return json({ error: "Free Plan limit reached (1 active offer max). Upgrade to Basic or Pro to create more." }, { status: 403 });
@@ -175,7 +178,7 @@ export default function NewOffer() {
   const fetcher = useFetcher<typeof loader>();
 
   const [offerName, setOfferName] = useState("");
-  const [placement, setPlacement] = useState("post_purchase");
+  const [placement, setPlacement] = useState("cart");
   const [triggerProductId, setTriggerProductId] = useState("");
   const [triggerProductTitle, setTriggerProductTitle] = useState("");
   const [upsellProductId, setUpsellProductId] = useState("");
@@ -204,7 +207,17 @@ export default function NewOffer() {
 
   const { recommendations = [], activePlan, activeOfferCount } = fetcher.data || useLoaderData<typeof loader>();
 
-  const isLimitReached = (activePlan === "Basic Plan" && activeOfferCount >= 2) || (activePlan === null && activeOfferCount >= 1);
+  const isLimitReached = (activePlan === null && activeOfferCount >= 1);
+
+  const placementOptions = [
+    { label: "Cart Drawer", value: "cart" },
+    { label: "Product Page FBT", value: "product_page" },
+    { 
+      label: (activePlan === "Basic Plan" || activePlan === null) ? "Post-Purchase (Pro Only)" : "Post-Purchase (1-Click)", 
+      value: "post_purchase",
+      disabled: activePlan === "Basic Plan" || activePlan === null
+    }
+  ];
 
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
@@ -252,8 +265,7 @@ export default function NewOffer() {
             {isLimitReached && (
               <Banner title="Offer Limit Reached" tone="warning" action={{ content: "Upgrade Plan", onAction: () => navigate("/app/pricing") }}>
                 <p>
-                  You have reached the maximum number of active offers for your current plan 
-                  ({activePlan === "Basic Plan" ? "2 offers" : "1 offer"}). 
+                  You have reached the maximum number of active offers for the Free Plan (1 offer). 
                   Please upgrade your plan to create more.
                 </p>
               </Banner>
@@ -281,10 +293,7 @@ export default function NewOffer() {
                 />
                 <Select
                   label="Placement"
-                  options={[
-                    { label: "Post-Purchase (1-Click)", value: "post_purchase" },
-                    { label: "Cart Drawer", value: "cart" },
-                  ]}
+                  options={placementOptions}
                   value={placement}
                   onChange={setPlacement}
                 />

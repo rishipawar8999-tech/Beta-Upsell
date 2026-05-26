@@ -39,13 +39,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     acceptedOffers: accepts
   };
 
-  return json({ totalOffers, activeOffers, analytics, shopDomain });
+  return json({ 
+    totalOffers, 
+    activeOffers, 
+    analytics, 
+    shopDomain,
+    apiKey: process.env.SHOPIFY_API_KEY || ""
+  });
 };
 
 import { CalloutCard } from "@shopify/polaris";
 
 export default function Dashboard() {
-  const { totalOffers, activeOffers, analytics, shopDomain } = useLoaderData<typeof loader>();
+  const { totalOffers, activeOffers, analytics, shopDomain, apiKey } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   
   const showSetupGuide = totalOffers === 0;
@@ -63,7 +69,7 @@ export default function Dashboard() {
               illustration="https://cdn.shopify.com/s/assets/admin/checkout/settings-customizecart-705f57c725ac05be5a34ec20c05b94298cb8afd100f26ceaf27f6ce7e95ad3e2.svg"
               primaryAction={{
                 content: "Enable App Embed in Theme",
-                url: `https://${shopDomain}/admin/themes/current/editor?context=apps`,
+                url: `https://${shopDomain}/admin/themes/current/editor?template=product&addAppBlockId=${apiKey}/product_page_fbt&target=main`,
                 target: "_blank"
               }}
               secondaryAction={{
