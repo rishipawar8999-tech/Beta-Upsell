@@ -57,26 +57,28 @@ export default function Dashboard() {
     >
       <BlockStack gap="500">
         {showSetupGuide && (
-          <Layout.Section>
-            <CalloutCard
-              title="Welcome to Beta-Upsell! Let's get you set up. 🚀"
-              illustration="https://cdn.shopify.com/s/assets/admin/checkout/settings-customizecart-705f57c725ac05be5a34ec20c05b94298cb8afd100f26ceaf27f6ce7e95ad3e2.svg"
-              primaryAction={{
-                content: "Enable App Embed in Theme",
-                url: `https://${shopDomain}/admin/themes/current/editor?context=apps`,
-                target: "_blank"
-              }}
-              secondaryAction={{
-                content: "Create your first offer",
-                onAction: () => navigate("/app/offers/new")
-              }}
-            >
-              <p>
-                To make your upsells visible to customers, you must first enable the Beta-Upsell app embed in your Shopify Theme Editor. 
-                Click the button below to automatically open your theme settings.
-              </p>
-            </CalloutCard>
-          </Layout.Section>
+          <Layout>
+            <Layout.Section>
+              <CalloutCard
+                title="Welcome to Beta-Upsell! Let's get you set up. 🚀"
+                illustration="https://cdn.shopify.com/s/assets/admin/checkout/settings-customizecart-705f57c725ac05be5a34ec20c05b94298cb8afd100f26ceaf27f6ce7e95ad3e2.svg"
+                primaryAction={{
+                  content: "Enable App Embed in Theme",
+                  url: `https://${shopDomain}/admin/themes/current/editor?context=apps`,
+                  target: "_blank"
+                }}
+                secondaryAction={{
+                  content: "Create your first offer",
+                  onAction: () => navigate("/app/offers/new")
+                }}
+              >
+                <p>
+                  To make your upsells visible to customers, you must first enable the Beta-Upsell app embed in your Shopify Theme Editor. 
+                  Click the button below to automatically open your theme settings.
+                </p>
+              </CalloutCard>
+            </Layout.Section>
+          </Layout>
         )}
 
         <Grid>
